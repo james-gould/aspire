@@ -77,7 +77,7 @@ jobs:
           retention-days: 30
 
   results:
-    if: always()
+    if: ${{ github.repository_owner == 'dotnet' }}
     runs-on: ubuntu-latest
     name: Final Results
     needs: run_tests
