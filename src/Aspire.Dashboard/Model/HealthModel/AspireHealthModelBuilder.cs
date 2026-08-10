@@ -133,12 +133,20 @@ public static class AspireHealthModelBuilder
 
     private static string? GetParentEntityName(string resourceType) => resourceType switch
     {
-        KnownResourceTypes.Project or KnownResourceTypes.Executable => ServicesEntityName,
-        KnownResourceTypes.Container or KnownResourceTypes.ContainerExec => InfrastructureEntityName,
+        // Parameters and connection strings are configuration values resolved at startup. They have no
+        // runtime health of their own, so including them would add permanently unknown entities.
+        KnownResourceTypes.Parameter or KnownResourceTypes.ConnectionString => null,
 
-        // Parameters, connection strings and external services have no runtime health of their own, so they
-        // are left out of the MVP model rather than added as permanently unknown entities.
-        _ => null
+        // Containers and external services are things the application depends on rather than the
+        // application itself, so they roll up through the limited-impact infrastructure entity.
+        KnownResourceTypes.Container
+            or KnownResourceTypes.ContainerExec
+            or KnownResourceTypes.ExternalService => InfrastructureEntityName,
+
+        // Projects, executables and custom resource types are all treated as application services. Falling
+        // through by default rather than listing known types means a custom resource with health checks
+        // still appears in the model.
+        _ => ServicesEntityName
     };
 
     private static HealthModelEntity CreateResourceEntity(ResourceViewModel resource)

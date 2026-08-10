@@ -45,13 +45,40 @@ public class AspireHealthModelBuilderTests
     public void Build_ResourceWithoutRuntimeHealth_IsExcluded()
     {
         var parameter = ModelTestHelpers.CreateResource(resourceName: "secret", resourceType: KnownResourceTypes.Parameter, state: KnownResourceState.Running);
+        var connectionString = ModelTestHelpers.CreateResource(resourceName: "conn", resourceType: KnownResourceTypes.ConnectionString, state: KnownResourceState.Running);
 
-        var definition = AspireHealthModelBuilder.Build([parameter]);
+        var definition = AspireHealthModelBuilder.Build([parameter, connectionString]);
 
         Assert.Collection(definition.Entities,
             e => Assert.Equal(AspireHealthModelBuilder.RootEntityName, e.Name),
             e => Assert.Equal(AspireHealthModelBuilder.ServicesEntityName, e.Name),
             e => Assert.Equal(AspireHealthModelBuilder.InfrastructureEntityName, e.Name));
+    }
+
+    [Fact]
+    public void Build_CustomResourceType_IsGroupedUnderServices()
+    {
+        // Custom resource types can carry health checks, so they must appear in the model rather than being
+        // dropped because they are not a known type.
+        var custom = ModelTestHelpers.CreateResource(resourceName: "widget", resourceType: "Test Resource", state: KnownResourceState.Running);
+
+        var definition = AspireHealthModelBuilder.Build([custom]);
+
+        Assert.Contains(
+            new HealthModelRelationship(AspireHealthModelBuilder.ServicesEntityName, AspireHealthModelBuilder.GetEntityName(custom)),
+            definition.Relationships);
+    }
+
+    [Fact]
+    public void Build_ExternalService_IsGroupedUnderInfrastructure()
+    {
+        var external = ModelTestHelpers.CreateResource(resourceName: "api-gateway", resourceType: KnownResourceTypes.ExternalService, state: KnownResourceState.Running);
+
+        var definition = AspireHealthModelBuilder.Build([external]);
+
+        Assert.Contains(
+            new HealthModelRelationship(AspireHealthModelBuilder.InfrastructureEntityName, AspireHealthModelBuilder.GetEntityName(external)),
+            definition.Relationships);
     }
 
     [Fact]
