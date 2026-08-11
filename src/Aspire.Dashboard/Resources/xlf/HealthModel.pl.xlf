@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../HealthModel.resx">
+    <body>
+      <trans-unit id="HealthModelDependenciesHeader">
+        <source>Dependencies</source>
+        <target state="new">Dependencies</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDescription">
+        <source>Health states roll up from resources to the logical components that depend on them.</source>
+        <target state="new">Health states roll up from resources to the logical components that depend on them.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDetailsColumnHeader">
+        <source>Details</source>
+        <target state="new">Details</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelEntityColumnHeader">
+        <source>Entity</source>
+        <target state="new">Entity</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelHeader">
+        <source>Health model</source>
+        <target state="new">Health model</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelHealthColumnHeader">
+        <source>Health</source>
+        <target state="new">Health</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoDependencies">
+        <source>This entity has no dependencies.</source>
+        <target state="new">This entity has no dependencies.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoEntities">
+        <source>No entities in the health model.</source>
+        <target state="new">No entities in the health model.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoSignals">
+        <source>This entity has no signals of its own. Its health comes entirely from its dependencies.</source>
+        <target state="new">This entity has no signals of its own. Its health comes entirely from its dependencies.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPageTitle">
+        <source>{0} health model</source>
+        <target state="new">{0} health model</target>
+        <note>{0} is an application name</note>
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyDependenciesState">
+        <source>From dependencies</source>
+        <target state="new">From dependencies</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyImpact">
+        <source>Impact</source>
+        <target state="new">Impact</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyResource">
+        <source>Resource</source>
+        <target state="new">Resource</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyRollup">
+        <source>Dependency rollup</source>
+        <target state="new">Dependency rollup</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertySignalsState">
+        <source>From signals</source>
+        <target state="new">From signals</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelRollupColumnHeader">
+        <source>Rollup</source>
+        <target state="new">Rollup</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelRollupMaxNotHealthy">
+        <source>At most {0} not healthy</source>
+        <target state="new">At most {0} not healthy</target>
+        <note>{0} is a count or percentage of child entities that may be unhealthy</note>
+      </trans-unit>
+      <trans-unit id="HealthModelRollupMinHealthy">
+        <source>At least {0} healthy</source>
+        <target state="new">At least {0} healthy</target>
+        <note>{0} is a count or percentage of child entities that must be healthy</note>
+      </trans-unit>
+      <trans-unit id="HealthModelRollupWorstOf">
+        <source>Worst of</source>
+        <target state="new">Worst of</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalColumnHeader">
+        <source>Signal</source>
+        <target state="new">Signal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalCount">
+        <source>{0} of {1} healthy</source>
+        <target state="new">{0} of {1} healthy</target>
+        <note>{0} is the number of healthy signals, {1} is the total number of signals</note>
+      </trans-unit>
+      <trans-unit id="HealthModelSignalsColumnHeader">
+        <source>Signals</source>
+        <target state="new">Signals</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalsHeader">
+        <source>Signals</source>
+        <target state="new">Signals</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelStateColumnHeader">
+        <source>State</source>
+        <target state="new">State</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelTypeColumnHeader">
+        <source>Type</source>
+        <target state="new">Type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelViewResource">
+        <source>View resource</source>
+        <target state="new">View resource</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

@@ -162,6 +162,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Reconnect.resx</DependentUpon>
     </Compile>
+    <Compile Update="Resources\HealthModel.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HealthModel.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -266,6 +271,13 @@
       <SubType>Designer</SubType>
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Reconnect.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\HealthModel.resx">
+      <XlfSourceFormat>Resx</XlfSourceFormat>
+      <XlfOutputItem>EmbeddedResource</XlfOutputItem>
+      <SubType>Designer</SubType>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>HealthModel.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 
