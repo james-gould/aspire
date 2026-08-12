@@ -1,0 +1,37 @@
+.health-model-details-layout {
+    height: 100%;
+    overflow: auto;
+}
+
+::deep .health-model-property-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+::deep .health-model-property {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 8px;
+    align-items: center;
+}
+
+::deep .health-model-property-name {
+    color: var(--neutral-foreground-hint);
+}
+
+::deep .health-model-property-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+::deep .health-model-empty {
+    color: var(--neutral-foreground-hint);
+    padding: 8px 0;
+}

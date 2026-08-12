@@ -1,0 +1,117 @@
+@page "/healthmodel"
+
+@using Aspire.Dashboard.Components.Controls.Grid
+@using Aspire.Dashboard.Model.HealthModel
+@using Aspire.Dashboard.Resources
+@using Aspire.Dashboard.Utils
+
+@inject IStringLocalizer<Dashboard.Resources.HealthModel> Loc
+@inject IStringLocalizer<ControlsStrings> ControlsStringsLoc
+
+@implements IAsyncDisposable
+
+<PageTitle>
+    <ApplicationName ResourceName="@nameof(Dashboard.Resources.HealthModel.HealthModelPageTitle)" Loc="@Loc" />
+</PageTitle>
+
+<div class="page-content-container">
+    <AspirePageContentLayout IsSummaryDetailsViewOpen="@(_selectedNode is not null)">
+        <PageTitleSection>
+            <h1 class="page-header">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHeader)]</h1>
+        </PageTitleSection>
+
+        <MainSection>
+            <SummaryDetailsView DetailsTitle="@_selectedNode?.DisplayName"
+                                ShowDetails="@(_selectedNode is not null)"
+                                OnDismiss="@ClearSelectedEntity"
+                                SelectedValue="@_selectedNode"
+                                ViewKey="HealthModelList">
+                <Summary>
+                    <div class="health-model-summary-layout">
+                        <div class="health-model-overview">
+                            @{
+                                var (overallIcon, overallColor) = HealthModelIconHelpers.GetHealthStateIcon(_snapshot.State);
+                            }
+                            <FluentIcon Value="@overallIcon" Color="@overallColor" />
+                            <span class="health-model-overview-state">@_snapshot.State.ToString()</span>
+                            <span class="health-model-overview-description">
+                                @Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDescription)]
+                            </span>
+                        </div>
+
+                        <div class="health-model-grid-container">
+                            <FluentDataGrid TGridItem="HealthModelNode"
+                                            Items="@_snapshot.AllNodes.AsQueryable()"
+                                            ItemKey="@(n => n.Name)"
+                                            ColumnResizeLabels="@_resizeLabels"
+                                            ColumnSortLabels="@_sortLabels"
+                                            ResizableColumns="true"
+                                            ResizeType="DataGridResizeType.Discrete"
+                                            GenerateHeader="GenerateHeaderOption.Sticky"
+                                            RowSize="DataGridRowSize.Medium"
+                                            GridTemplateColumns="2fr 1fr 1fr 1fr 1.2fr"
+                                            ShowHover="true"
+                                            Style="width:100%"
+                                            OnRowClick="@(r => r.ExecuteOnDefault(SelectEntity))"
+                                            Class="main-grid enable-row-click">
+                                <ChildContent>
+                                    <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelEntityColumnHeader)]"
+                                                          Tooltip="true"
+                                                          TooltipText="@(n => n.DisplayName)">
+                                        @{
+                                            var (icon, color) = HealthModelIconHelpers.GetHealthStateIcon(context.State);
+                                        }
+                                        <span class="health-model-entity-name" style="@GetIndentStyle(context)">
+                                            <FluentIcon Value="@icon" Color="@color" />
+                                            @context.DisplayName
+                                        </span>
+                                    </AspireTemplateColumn>
+
+                                    <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelTypeColumnHeader)]"
+                                                          Tooltip="true"
+                                                          TooltipText="@(n => n.Entity.Category)">
+                                        @context.Entity.Category
+                                    </AspireTemplateColumn>
+
+                                    <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHealthColumnHeader)]">
+                                        @context.State.ToString()
+                                    </AspireTemplateColumn>
+
+                                    <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelSignalsColumnHeader)]">
+                                        @if (context.Entity.Signals.Length > 0)
+                                        {
+                                            @GetSignalSummary(context)
+                                        }
+                                        else
+                                        {
+                                            <span class="empty-data"></span>
+                                        }
+                                    </AspireTemplateColumn>
+
+                                    <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelRollupColumnHeader)]"
+                                                          Tooltip="true"
+                                                          TooltipText="@(n => GetRollupDescription(n))">
+                                        @if (context.Children.Length > 0)
+                                        {
+                                            @GetRollupDescription(context)
+                                        }
+                                        else
+                                        {
+                                            <span class="empty-data"></span>
+                                        }
+                                    </AspireTemplateColumn>
+                                </ChildContent>
+                                <EmptyContent>
+                                    <FluentIcon Icon="Icons.Regular.Size24.Heart" />&nbsp;@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelNoEntities)]
+                                </EmptyContent>
+                            </FluentDataGrid>
+                        </div>
+                    </div>
+                </Summary>
+                <Details>
+                    <HealthModelEntityDetails Node="@context" />
+                </Details>
+            </SummaryDetailsView>
+        </MainSection>
+    </AspirePageContentLayout>
+</div>
