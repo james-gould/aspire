@@ -41,7 +41,7 @@
 
                         <div class="health-model-grid-container">
                             <FluentDataGrid TGridItem="HealthModelNode"
-                                            Items="@_snapshot.AllNodes.AsQueryable()"
+                                            Items="@_nodes"
                                             ItemKey="@(n => n.Name)"
                                             ColumnResizeLabels="@_resizeLabels"
                                             ColumnSortLabels="@_sortLabels"

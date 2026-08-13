@@ -71,7 +71,7 @@
             else
             {
                 <FluentDataGrid TGridItem="HealthModelSignal"
-                                Items="@Node.Entity.Signals.AsQueryable()"
+                                Items="@_signals"
                                 ItemKey="@(s => s.Name)"
                                 GenerateHeader="GenerateHeaderOption.Sticky"
                                 RowSize="DataGridRowSize.Medium"
@@ -109,7 +109,7 @@
             else
             {
                 <FluentDataGrid TGridItem="HealthModelNode"
-                                Items="@Node.Children.AsQueryable()"
+                                Items="@_children"
                                 ItemKey="@(n => n.Name)"
                                 GenerateHeader="GenerateHeaderOption.Sticky"
                                 RowSize="DataGridRowSize.Medium"
@@ -140,5 +140,16 @@
     [Parameter, EditorRequired]
     public required HealthModelNode Node { get; set; }
 
+    // See the note in HealthModel.razor.cs: FluentDataGrid cannot compose LINQ operators over a queryable
+    // built directly from an ImmutableArray, so the entries are materialized into lists first.
+    private IQueryable<HealthModelSignal> _signals = Enumerable.Empty<HealthModelSignal>().AsQueryable();
+    private IQueryable<HealthModelNode> _children = Enumerable.Empty<HealthModelNode>().AsQueryable();
+
     private string RollupDescription => Pages.HealthModel.GetRollupDescription(Node.Entity.Dependencies, Loc);
+
+    protected override void OnParametersSet()
+    {
+        _signals = Node.Entity.Signals.ToList().AsQueryable();
+        _children = Node.Children.ToList().AsQueryable();
+    }
 }

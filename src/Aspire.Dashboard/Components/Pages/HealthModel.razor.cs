@@ -23,6 +23,13 @@ public partial class HealthModel : ComponentBase, IAsyncDisposable
     private ColumnResizeLabels _resizeLabels = ColumnResizeLabels.Default;
     private ColumnSortLabels _sortLabels = ColumnSortLabels.Default;
     private HealthModelSnapshot _snapshot = HealthModelSnapshot.Empty;
+
+    // FluentDataGrid composes LINQ operators such as Count() onto the queryable it is given. An
+    // ImmutableArray<T> is a struct, so a queryable built directly over one produces an expression tree
+    // typed as ImmutableArray<T> that those operators reject at runtime. Materializing into a list first
+    // keeps the expression typed as a reference type, and caching it avoids rebuilding on every render.
+    private IQueryable<HealthModelNode> _nodes = Enumerable.Empty<HealthModelNode>().AsQueryable();
+
     private HealthModelNode? _selectedNode;
     private Task? _resourceSubscriptionTask;
 
@@ -90,6 +97,7 @@ public partial class HealthModel : ComponentBase, IAsyncDisposable
     {
         var definition = AspireHealthModelBuilder.Build(_resourceByName.Values);
         _snapshot = HealthModelEvaluator.Evaluate(definition);
+        _nodes = _snapshot.AllNodes.ToList().AsQueryable();
 
         // Entities are rebuilt from scratch on every resource change, so the previously selected node is a
         // stale instance. Re-resolve it by name to keep the details pane pointing at live data.
