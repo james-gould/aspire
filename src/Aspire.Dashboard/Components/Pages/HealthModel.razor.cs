@@ -86,8 +86,14 @@ public partial class HealthModel : ComponentBase, IAsyncDisposable
 
     protected override void OnParametersSet()
     {
-        // The selected entity is carried in the query string so the details pane survives a page reload.
-        if (EntityName is not null && _selectedNode?.Name != EntityName)
+        // The selected entity is carried in the query string so the details pane survives a page reload and
+        // follows browser navigation. Clearing when the parameter is absent is what closes the pane when the
+        // user navigates back to the page without a selection.
+        if (EntityName is null)
+        {
+            _selectedNode = null;
+        }
+        else if (_selectedNode?.Name != EntityName)
         {
             _selectedNode = _snapshot.AllNodes.FirstOrDefault(n => string.Equals(n.Name, EntityName, StringComparison.Ordinal));
         }
@@ -161,8 +167,11 @@ public partial class HealthModel : ComponentBase, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _cts.CancelAsync();
-        _cts.Dispose();
 
+        // Wait for the subscription loop to unwind before disposing the source. Disposing it first would
+        // make the loop throw ObjectDisposedException while observing the token.
         await TaskHelpers.WaitIgnoreCancelAsync(_resourceSubscriptionTask);
+
+        _cts.Dispose();
     }
 }
