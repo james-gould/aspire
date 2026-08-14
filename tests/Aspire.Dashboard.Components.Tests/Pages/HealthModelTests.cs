@@ -52,6 +52,20 @@ public class HealthModelTests : DashboardTestContext
     }
 
     [Fact]
+    public void Render_FailedContainer_ShowsDegradedOverallState()
+    {
+        var cut = RenderHealthModelPage(
+            ModelTestHelpers.CreateResource(resourceName: "api", resourceType: KnownResourceTypes.Project, state: KnownResourceState.Running),
+            ModelTestHelpers.CreateResource(resourceName: "cache", resourceType: KnownResourceTypes.Container, state: KnownResourceState.FailedToStart));
+
+        cut.WaitForAssertion(() =>
+        {
+            var overview = cut.Find(".health-model-overview-state");
+            Assert.Equal(nameof(HealthState.Degraded), overview.TextContent.Trim());
+        });
+    }
+
+    [Fact]
     public void Render_NoResources_StillShowsLogicalEntities()
     {
         var cut = RenderHealthModelPage();

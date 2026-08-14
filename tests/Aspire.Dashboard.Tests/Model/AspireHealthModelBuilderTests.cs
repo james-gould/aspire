@@ -172,6 +172,22 @@ public class AspireHealthModelBuilderTests
     }
 
     [Fact]
+    public void BuildAndEvaluate_UnhealthyContainer_DegradesApplicationRatherThanFailingIt()
+    {
+        // The container group itself reports unhealthy, but infrastructure has limited impact so the
+        // application only sees degraded. This is the behaviour the sample model exists to demonstrate.
+        var project = ModelTestHelpers.CreateResource(resourceName: "api", resourceType: KnownResourceTypes.Project, state: KnownResourceState.Running);
+        var container = ModelTestHelpers.CreateResource(resourceName: "cache", resourceType: KnownResourceTypes.Container, state: KnownResourceState.FailedToStart);
+
+        var snapshot = HealthModelEvaluator.Evaluate(AspireHealthModelBuilder.Build([project, container]));
+
+        Assert.Equal(HealthState.Degraded, snapshot.State);
+
+        var infrastructure = Assert.Single(snapshot.AllNodes, n => n.Name == AspireHealthModelBuilder.InfrastructureEntityName);
+        Assert.Equal(HealthState.Unhealthy, infrastructure.State);
+    }
+
+    [Fact]
     public void BuildAndEvaluate_UnhealthyProject_FailsApplication()
     {
         var project = ModelTestHelpers.CreateResource(resourceName: "api", resourceType: KnownResourceTypes.Project, state: KnownResourceState.FailedToStart);

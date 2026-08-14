@@ -17,12 +17,12 @@ namespace Aspire.Dashboard.Model.HealthModel;
 /// <code>
 /// aspire-app-health              (root, worst-of rollup)
 ///   |- services                  (projects and executables, standard impact)
-///   |- infrastructure            (containers, limited impact, tolerates one unhealthy member)
+///   |- infrastructure            (containers, limited impact, threshold rollup)
 /// </code>
 /// <para>
-/// The two logical entities exist to exercise the parts of the Azure model that are not obvious: the root
-/// uses a plain worst-of rollup, while <c>infrastructure</c> combines a threshold rollup with limited impact
-/// so a single broken container degrades the application rather than failing it outright.
+/// The two logical entities exist to exercise the parts of the Azure model that are not obvious: a broken
+/// service fails the application outright, while a broken container makes the infrastructure group unhealthy
+/// and limited impact rewrites that to degraded by the time it reaches the application.
 /// </para>
 /// </remarks>
 public static class AspireHealthModelBuilder
@@ -76,13 +76,14 @@ public static class AspireHealthModelBuilder
             // reported to the application as degraded rather than unhealthy.
             Impact = EntityImpact.Limited,
 
-            // Tolerate a single unhealthy container before the group itself reports a problem. This is the
-            // "4 VMs, tolerate 1 offline" pattern from the Azure docs expressed as a not-healthy limit.
+            // Any container that is not healthy makes the group unhealthy. There is deliberately no degraded
+            // threshold: limited impact swallows a degraded child entirely, so a degraded tier here would be
+            // invisible at the application level. Going straight to unhealthy means limited impact rewrites
+            // it to degraded and a single broken container is still surfaced on the application entity.
             Dependencies = new DependenciesAggregation
             {
                 AggregationType = DependenciesAggregationType.MaxNotHealthy,
-                DegradedThreshold = 1,
-                UnhealthyThreshold = 2,
+                UnhealthyThreshold = 1,
                 Unit = AggregationUnit.Absolute
             }
         });
