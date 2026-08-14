@@ -70,6 +70,24 @@ public sealed record HealthModelRelationship(string ParentEntityName, string Chi
 /// <summary>
 /// A complete health model: a set of entities and the relationships that connect them.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The shape of this type mirrors <c>Microsoft.CloudHealth/healthmodels</c> and its <c>entities</c> and
+/// <c>relationships</c> child resources so the model can be translated to Bicep. <see cref="Entities"/> and
+/// <see cref="Relationships"/> are kept as flat lists rather than a tree for that reason: the Azure model is
+/// a graph in which an entity may have several parents, and relationships are standalone resources.
+/// </para>
+/// <para>
+/// Two pieces are still required before a model can be deployed, and neither can be derived from the local
+/// app model: an entity that represents a real Azure resource needs the ARM resource ID of its deployed
+/// counterpart, and every data-source signal group needs an <c>authenticationsettings</c> resource to read
+/// through. Both arrive with deployment information rather than from the running app host.
+/// </para>
+/// <para>
+/// Target the <c>2026-05-01-preview</c> API version, which is the newest version with generated Bicep types.
+/// See https://learn.microsoft.com/azure/azure-monitor/health-models/tutorial-bicep.
+/// </para>
+/// </remarks>
 public sealed record HealthModelDefinition
 {
     /// <summary>
