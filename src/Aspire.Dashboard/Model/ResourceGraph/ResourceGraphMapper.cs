@@ -3,6 +3,7 @@
 
 using System.Collections.Immutable;
 using System.Xml.Linq;
+using Aspire.Dashboard.Model.HealthModel;
 using Aspire.Dashboard.Resources;
 using Microsoft.Extensions.Localization;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -12,26 +13,53 @@ namespace Aspire.Dashboard.Model.ResourceGraph;
 
 public static class ResourceGraphMapper
 {
-    public static ResourceDto MapResource(ResourceViewModel r, IEnumerable<ResourceViewModel> graphResources, IDictionary<string, ResourceViewModel> resourcesByName, IStringLocalizer<Columns> columnsLoc, bool showHiddenResources, IconResolver iconResolver)
+    /// <summary>
+    /// Maps every resource in the graph, deriving the parent-child structure from app host dependencies and
+    /// rolling child health up through it.
+    /// </summary>
+    /// <remarks>
+    /// The rollup needs to see the whole graph, so it is computed once here and shared by each mapped
+    /// resource rather than being recomputed per resource.
+    /// </remarks>
+    public static List<ResourceDto> MapResources(
+        IReadOnlyList<ResourceViewModel> graphResources,
+        IDictionary<string, ResourceViewModel> resourcesByName,
+        IStringLocalizer<Columns> columnsLoc,
+        bool showHiddenResources,
+        IconResolver iconResolver)
     {
-        var resolvedNames = new List<string>();
+        ArgumentNullException.ThrowIfNull(graphResources);
 
-        // Remove relationships back to the current resource. The graph doesn't display self referential relationships.
-        var filteredRelationships = r.Relationships.Where(relationship => relationship.ResourceName != r.DisplayName);
+        var edges = ResourceGraphHealth.BuildEdges(graphResources, showHiddenResources);
+        var healthStates = ResourceGraphHealth.ComputeEffectiveStates(graphResources, edges);
 
-        foreach (var resourceRelationships in filteredRelationships.GroupBy(r => r.ResourceName, StringComparers.ResourceName))
+        var childNamesByParent = edges
+            .GroupBy(e => e.ParentName, StringComparers.ResourceName)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.ChildName).Distinct(StringComparers.ResourceName).OrderBy(n => n, StringComparers.ResourceName).ToImmutableArray(),
+                StringComparers.ResourceName);
+
+        var dtos = new List<ResourceDto>(graphResources.Count);
+        foreach (var resource in graphResources)
         {
-            var matches = graphResources
-                .Where(r => string.Equals(r.DisplayName, resourceRelationships.Key, StringComparisons.ResourceName))
-                .Where(r => !r.IsResourceHidden(showHiddenResources))
-                .ToList();
+            var childNames = childNamesByParent.TryGetValue(resource.Name, out var children) ? children : [];
+            var healthState = healthStates.TryGetValue(resource.Name, out var state) ? state : HealthState.Unknown;
 
-            foreach (var match in matches)
-            {
-                resolvedNames.Add(match.Name);
-            }
+            dtos.Add(MapResource(resource, resourcesByName, columnsLoc, iconResolver, childNames, healthState));
         }
 
+        return dtos;
+    }
+
+    public static ResourceDto MapResource(
+        ResourceViewModel r,
+        IDictionary<string, ResourceViewModel> resourcesByName,
+        IStringLocalizer<Columns> columnsLoc,
+        IconResolver iconResolver,
+        ImmutableArray<string> childNames,
+        HealthState healthState)
+    {
         var endpoint = ResourceUrlHelpers.GetUrls(r, includeInternalUrls: false, includeNonEndpointUrls: false).FirstOrDefault()
             ?? ResourceUrlHelpers.GetUrls(r, includeInternalUrls: false, includeNonEndpointUrls: true).FirstOrDefault();
         var resolvedEndpointText = r.IsParameter ? null : ResolvedEndpointText(endpoint);
@@ -46,7 +74,7 @@ public static class ResourceGraphMapper
         {
             Name = r.Name,
             ResourceType = r.ResourceType,
-            DisplayName = ResourceViewModel.GetResourceName(r, resourcesByName),
+            DisplayName = resourceName,
             Uid = r.Uid,
             ResourceIcon = new IconDto
             {
@@ -60,7 +88,8 @@ public static class ResourceGraphMapper
                 Color = stateIcon.Color.ToAttributeValue()!,
                 Tooltip = stateIcon.Text ?? r.State
             },
-            ReferencedNames = resolvedNames.Distinct().OrderBy(n => n).ToImmutableArray(),
+            ChildNames = childNames,
+            HealthState = healthState.ToString(),
             EndpointUrl = r.IsParameter ? null : endpoint?.Url,
             EndpointText = resolvedEndpointText
         };

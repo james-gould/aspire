@@ -99,9 +99,20 @@ class ResourceGraph {
             if (dragged) {
                 this.simulation.alphaTarget(0);
                 dragged = false;
+
+                // Keep fx/fy so the node stays where it was dropped instead of springing back to wherever
+                // the simulation wants it. Double clicking the node releases it again.
+                event.subject.pinned = true;
+                this.updateNodePinnedState();
             }
-            event.subject.fx = null;
-            event.subject.fy = null;
+            else {
+                // Mousedown without movement is a click, not a drag, so release the temporary fixing applied
+                // on start. Pinning here would make every click on a node pin it.
+                if (!event.subject.pinned) {
+                    event.subject.fx = null;
+                    event.subject.fy = null;
+                }
+            }
         });
 
         var defs = this.svg.append("defs");
@@ -147,6 +158,34 @@ class ResourceGraph {
 
     resetZoomAndPan() {
         this.svg.transition().call(this.zoom.transform, d3.zoomIdentity);
+        this.unpinAllNodes();
+    }
+
+    // Releases every pinned node so the layout is driven by the simulation again.
+    unpinAllNodes() {
+        var hasPinnedNodes = false;
+        for (const node of this.nodes) {
+            if (node.pinned) {
+                node.pinned = false;
+                node.fx = null;
+                node.fy = null;
+                hasPinnedNodes = true;
+            }
+        }
+
+        if (hasPinnedNodes) {
+            this.updateNodePinnedState();
+            this.simulation.alpha(0.3).restart();
+        }
+    }
+
+    // Reflects the pinned state of each node in the DOM so it can be styled.
+    updateNodePinnedState() {
+        if (!this.nodeElements) {
+            return;
+        }
+
+        this.nodeElements.classed("resource-group-pinned", n => !!n.pinned);
     }
 
     zoomIn() {
@@ -196,11 +235,11 @@ class ResourceGraph {
         if (!this.iconEqual(r1.resourceIcon, r2.resourceIcon)) {
             return false;
         }
-        if (r1.referencedNames.length !== r2.referencedNames.length) {
+        if (r1.childNames.length !== r2.childNames.length) {
             return false;
         }
-        for (var i = 0; i < r1.referencedNames.length; i++) {
-            if (r1.referencedNames[i] !== r2.referencedNames[i]) {
+        for (var i = 0; i < r1.childNames.length; i++) {
+            if (r1.childNames[i] !== r2.childNames[i]) {
                 return false;
             }
         }
@@ -243,14 +282,14 @@ class ResourceGraph {
         // calculate degree (number of connections) for each resource
         const degreeMap = new Map();
         newResources.forEach(resource => {
-            degreeMap.set(resource.name, resource.referencedNames.length);
+            degreeMap.set(resource.name, resource.childNames.length);
         });
 
         // also count incoming connections
         newResources.forEach(resource => {
-            resource.referencedNames.forEach(refName => {
-                const currentDegree = degreeMap.get(refName) || 0;
-                degreeMap.set(refName, currentDegree + 1);
+            resource.childNames.forEach(childName => {
+                const currentDegree = degreeMap.get(childName) || 0;
+                degreeMap.set(childName, currentDegree + 1);
             });
         });
 
@@ -259,7 +298,8 @@ class ResourceGraph {
             const degree = degreeMap.get(resource.name) || 1;
 
             if (existingNode) {
-                // Update existing node without replacing it
+                // Spreading the existing node preserves simulation state, including the fx/fy of a node the
+                // user has pinned by dragging it.
                 updatedNodes.push({
                     ...existingNode,
                     label: resource.displayName,
@@ -267,6 +307,7 @@ class ResourceGraph {
                     endpointText: resource.endpointText,
                     resourceIcon: createIcon(resource.resourceIcon),
                     stateIcon: createIcon(resource.stateIcon),
+                    healthState: resource.healthState,
                     degree: degree
                 });
             } else {
@@ -278,6 +319,7 @@ class ResourceGraph {
                     endpointText: resource.endpointText,
                     resourceIcon: createIcon(resource.resourceIcon),
                     stateIcon: createIcon(resource.stateIcon),
+                    healthState: resource.healthState,
                     degree: degree
                 });
             }
@@ -303,18 +345,23 @@ class ResourceGraph {
         this.updateNodes(newResources);
 
         this.links = [];
+        var healthStateByName = new Map(newResources.map(r => [r.name, r.healthState]));
         for (var i = 0; i < newResources.length; i++) {
             var resource = newResources[i];
 
-            var resourceLinks = resource.referencedNames
-                .filter((referencedName) => {
-                    return newResources.some(r => r.name === referencedName);
+            var resourceLinks = resource.childNames
+                .filter((childName) => {
+                    return newResources.some(r => r.name === childName);
                 })
-                .map((referencedName, index) => {
+                .map((childName, index) => {
                     return {
-                        id: `${resource.name}-${referencedName}`,
-                        target: referencedName,
+                        id: `${resource.name}-${childName}`,
+                        target: childName,
                         source: resource.name,
+                        // The link takes the child's rolled up state. Because the child's state already
+                        // includes everything below it, an unhealthy leaf colours every link on the path
+                        // back to the root without any extra propagation here.
+                        healthState: healthStateByName.get(childName),
                         strength: 0.7
                     };
                 });
@@ -346,6 +393,7 @@ class ResourceGraph {
             .append("g")
             .attr("class", "resource-scale")
             .on('click', this.selectNode)
+            .on('dblclick', this.unpinNode)
             .on('contextmenu', this.nodeContextMenu)
             .on('mouseover', this.hoverNode)
             .on('mouseout', this.unHoverNode);
@@ -478,6 +526,9 @@ class ResourceGraph {
         // Set resource values that change.
         this.nodeElementsG
             .selectAll(".resource-group")
+            .attr("data-health", n => n.healthState);
+        this.nodeElementsG
+            .selectAll(".resource-group")
             .select(".resource-menu-cog")
             .attr("aria-label", n => this.getResourceMenuLabel(n))
             .select("title")
@@ -526,6 +577,12 @@ class ResourceGraph {
             .attr("opacity", 1);
 
         this.linkElements = newLinks.merge(this.linkElements);
+
+        // Health is refreshed on every update because a resource can change state without the shape of the
+        // graph changing at all.
+        this.linkElements.attr("data-health", l => l.healthState);
+
+        this.updateNodePinnedState();
 
         this.simulation
             .nodes(this.nodes)
@@ -694,6 +751,29 @@ class ResourceGraph {
         this.updateNodeHighlights(mouseoverNode);
     }
 
+    // Releases a node pinned by dragging so the simulation can lay it out again.
+    unpinNode = (event) => {
+        // Child elements keep the datum they were appended with, and updateNodes replaces node objects on
+        // every refresh, so the datum reachable from the event can be a stale copy. Only the id is stable,
+        // so the live node is looked up from the simulation's own array.
+        var id = event.target.__data__?.id;
+        var node = id ? this.nodes.find(n => n.id === id) : null;
+        if (!node || !node.pinned) {
+            return;
+        }
+
+        // The zoom behavior also handles dblclick. Without this the graph would zoom in while unpinning.
+        event.preventDefault();
+        event.stopPropagation();
+
+        node.pinned = false;
+        node.fx = null;
+        node.fy = null;
+
+        this.updateNodePinnedState();
+        this.simulation.alpha(0.3).restart();
+    }
+
     unHoverNode = (event) => {
         // Don't unhover the selected node when the context menu is open.
         // This is done to keep the node selected until the context menu is closed.
@@ -725,6 +805,11 @@ class ResourceGraph {
             }
             if (neighbors.indexOf(node.id) > -1) {
                 classNames.push('resource-group-highlight');
+            }
+            // The class attribute is rebuilt from scratch here, so the pinned marker has to be reapplied
+            // or dragging a node and then hovering any node would silently unpin it visually.
+            if (node.pinned) {
+                classNames.push('resource-group-pinned');
             }
             return classNames.join(' ');
         });
