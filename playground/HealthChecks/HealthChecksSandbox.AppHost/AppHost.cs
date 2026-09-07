@@ -11,39 +11,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 builder.Services.TryAddEventingSubscriber<TestResourceLifecycle>();
 
 AddTestResource("healthy", HealthStatus.Healthy, "I'm fine, thanks for asking.");
-var unhealthyResource = AddTestResource("unhealthy", HealthStatus.Unhealthy, "I can't do that, Dave.", exceptionMessage: "Feeling unhealthy.");
-var degradedResource = AddTestResource("degraded", HealthStatus.Degraded, "Had better days.", exceptionMessage: "Feeling degraded.");
-
-// -----------------------------------------------------------------------
-// A small service topology so the resource graph has a hierarchy to draw and health has somewhere to roll
-// up to. Every resource here is healthy in its own right, so whatever state they end up showing in the
-// graph has been inherited from something they depend on:
-//
-//   storefront ──> checkout-api ──> orders-db ──> orders-db-server (parent/child)
-//              │                └─> session-cache ──> unhealthy
-//              └─> catalog-api  ──> session-cache
-//                               └─> degraded
-//
-// storefront therefore ends up unhealthy through the cache, and catalog-api degraded.
-// -----------------------------------------------------------------------
-var ordersDbServer = AddTestResource("orders-db-server", HealthStatus.Healthy, "Serving databases.");
-var ordersDb = AddTestResource("orders-db", HealthStatus.Healthy, "Accepting queries.");
-ordersDb.WithParentRelationship(ordersDbServer);
-
-var sessionCache = AddTestResource("session-cache", HealthStatus.Healthy, "Cache warm.");
-sessionCache.WithReferenceRelationship(unhealthyResource);
-
-var checkoutApi = AddTestResource("checkout-api", HealthStatus.Healthy, "Taking orders.");
-checkoutApi.WithReferenceRelationship(ordersDb)
-           .WithReferenceRelationship(sessionCache);
-
-var catalogApi = AddTestResource("catalog-api", HealthStatus.Healthy, "Listing products.");
-catalogApi.WithReferenceRelationship(sessionCache)
-          .WithReferenceRelationship(degradedResource);
-
-AddTestResource("storefront", HealthStatus.Healthy, "Serving customers.")
-    .WithReferenceRelationship(checkoutApi)
-    .WithReferenceRelationship(catalogApi);
+AddTestResource("unhealthy", HealthStatus.Unhealthy, "I can't do that, Dave.", exceptionMessage: "Feeling unhealthy.");
+AddTestResource("degraded", HealthStatus.Degraded, "Had better days.", exceptionMessage: "Feeling degraded.");
 
 // -----------------------------------------------------------------------
 // External services with HTTP health checks to test friendly error messages
@@ -117,7 +86,7 @@ builder.AddProject<Projects.Aspire_Dashboard>(KnownResourceNames.AspireDashboard
 
 builder.Build().Run();
 
-IResourceBuilder<TestResource> AddTestResource(string name, HealthStatus status, string? description = null, string? exceptionMessage = null)
+void AddTestResource(string name, HealthStatus status, string? description = null, string? exceptionMessage = null)
 {
     var hasHealthyAfterFirstRunCheckRun = false;
     builder.Services.AddHealthChecks()
@@ -136,7 +105,7 @@ IResourceBuilder<TestResource> AddTestResource(string name, HealthStatus status,
                             return new HealthCheckResult(HealthStatus.Healthy, "Healthy beginning second health check run.");
                         });
 
-    return builder
+    builder
         .AddResource(new TestResource(name))
         .WithHealthCheck($"{name}_check")
         .WithHealthCheck($"{name}_resource_healthy_after_first_run_check")
@@ -147,6 +116,7 @@ IResourceBuilder<TestResource> AddTestResource(string name, HealthStatus status,
             Properties = [],
         })
         .ExcludeFromManifest();
+    return;
 }
 
 internal sealed class TestResource(string name) : Resource(name), IResourceWithEndpoints;
