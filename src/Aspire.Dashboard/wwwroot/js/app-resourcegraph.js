@@ -1,5 +1,11 @@
 import './d3.v7.min.js'
 
+// Layout constants. The node circle is r=56 with its label sitting below it, so the collision radius is
+// wider than the circle to keep labels from colliding as well.
+const NODE_COLLIDE_RADIUS = 92;
+const LAYER_HEIGHT = 230;
+const SIBLING_SPACING = 210;
+
 let resourceGraph = null;
 
 export function initializeResourcesGraph(resourcesInterop, graphIcons) {
@@ -9,6 +15,13 @@ export function initializeResourcesGraph(resourcesInterop, graphIcons) {
     const observer = new ResizeObserver(function () {
         resourceGraph.resize();
     });
+
+    // The graph container is what actually bounds the drawing area, but it starts hidden while another tab
+    // is selected, so the summary layout is observed too to catch the switch back to the graph.
+    const graphContainer = document.querySelector('.resource-graph-container');
+    if (graphContainer) {
+        observer.observe(graphContainer);
+    }
 
     for (const child of document.getElementsByClassName('resources-summary-layout')) {
         observer.observe(child);
@@ -42,11 +55,25 @@ class ResourceGraph {
         this.svg = d3.select('.resource-graph');
         this.baseGroup = this.svg.append("g");
 
+        // Set while a node is being dragged. Collision is skipped for that node so it can be moved freely
+        // over the top of others instead of being shouldered away by them.
+        this.draggingNodeId = null;
+
+        // The view is auto-fitted to the graph until the user zooms or pans, after which their framing is
+        // left alone.
+        this.userAdjustedView = false;
+
         // Enable zoom + pan
         // https://www.d3indepth.com/zoom-and-pan/
         // scaleExtent limits zoom to reasonable values
-        this.zoom = d3.zoom().scaleExtent([0.2, 4]).on('zoom', (event) => {
+        this.zoom = d3.zoom().scaleExtent([0.1, 4]).on('zoom', (event) => {
             this.baseGroup.attr('transform', event.transform);
+
+            // sourceEvent is only set when the transform came from a real gesture, so programmatic
+            // auto-fitting doesn't count as the user taking control of the framing.
+            if (event.sourceEvent) {
+                this.userAdjustedView = true;
+            }
         });
         this.svg.call(this.zoom);
 
@@ -54,30 +81,24 @@ class ResourceGraph {
         this.linkForce = d3
             .forceLink()
             .id(function (link) { return link.id })
-            .strength(1.0)
-            .distance(function (link) {
-                // adaptive distance: longer for highly connected nodes
-                const sourceDegree = link.source.degree || 1;
-                const targetDegree = link.target.degree || 1;
-                const maxDegree = Math.max(sourceDegree, targetDegree);
-
-                // scale distance with degree: 150 for low degree, up to 250 for high degree
-                return Math.min(150 + (maxDegree * 10), 250);
-            });
+            .strength(0.25)
+            .distance(LAYER_HEIGHT);
 
         this.simulation = d3
             .forceSimulation()
             .force('link', this.linkForce)
-            .force('charge', d3.forceManyBody().strength(-800))
-            .force("collide", d3.forceCollide(function (d) {
-                var degree = d.degree || 1;
-
-                // scale collide radius with degree: 90 for low degree, up to 180 for high degree
-                return Math.min(90 + (degree * 10), 180);
-            }).iterations(10))
-            .force("x", d3.forceX().strength(0.2))
-            .force("y", d3.forceY().strength(0.4))
-            .force("center", d3.forceCenter().strength(0.01));
+            .force('charge', d3.forceManyBody().strength(-900).distanceMax(700))
+            .force("collide", d3.forceCollide((node) => {
+                // A node being dragged has no collision radius, so it slides over its neighbours instead of
+                // pushing them around. Everything else keeps a radius, which is what stops nodes from
+                // sitting on top of each other once the graph is static again.
+                return node.id === this.draggingNodeId ? 0 : NODE_COLLIDE_RADIUS;
+            }).iterations(4))
+            // These two are what turn a floating force layout into a hierarchy. Y is pinned hard to the
+            // node's depth so every generation forms a row, while X only nudges each node toward the slot
+            // computed for it so collision can still spread crowded rows out.
+            .force("y", d3.forceY((node) => node.targetY || 0).strength(1))
+            .force("x", d3.forceX((node) => node.targetX || 0).strength(0.25));
 
         // Drag start is trigger on mousedown from click.
         // Only change the state of the simulation when the drag event is triggered.
@@ -85,6 +106,12 @@ class ResourceGraph {
         var dragged = false;
         this.dragDrop = d3.drag().on('start', (event) => {
             dragActive = event.active;
+            dragged = false;
+
+            // Reset defensively. If a previous gesture never delivered its end event (the browser losing
+            // focus mid-drag will do this) the node would otherwise stay excluded from collision forever.
+            this.draggingNodeId = null;
+
             event.subject.fx = event.subject.x;
             event.subject.fy = event.subject.y;
         }).on('drag', (event) => {
@@ -92,18 +119,32 @@ class ResourceGraph {
                 this.simulation.alphaTarget(0.1).restart();
                 dragActive = true;
             }
-            dragged = true;
+            if (!dragged) {
+                dragged = true;
+
+                // Drop the node out of collision for the duration of the drag so it can be moved anywhere,
+                // including straight over other nodes, rather than being blocked by whatever is nearby.
+                this.draggingNodeId = event.subject.id;
+            }
             event.subject.fx = event.x;
             event.subject.fy = event.y;
         }).on('end', (event) => {
             if (dragged) {
                 this.simulation.alphaTarget(0);
                 dragged = false;
+                this.draggingNodeId = null;
 
                 // Keep fx/fy so the node stays where it was dropped instead of springing back to wherever
                 // the simulation wants it. Double clicking the node releases it again.
                 event.subject.pinned = true;
+
+                // Collision can't move a node that is fixed in place, so anything else already pinned on
+                // this spot would stay overlapped forever. Release those back to the simulation and let it
+                // push them clear, which keeps the most recent drop as the one that wins.
+                this.releasePinnedNodesOverlapping(event.subject);
+
                 this.updateNodePinnedState();
+                this.simulation.alpha(0.4).restart();
             }
             else {
                 // Mousedown without movement is a click, not a drag, so release the temporary fixing applied
@@ -116,6 +157,21 @@ class ResourceGraph {
         });
 
         var defs = this.svg.append("defs");
+
+        // Dot grid that sits under the graph and pans/zooms with it, so the canvas the nodes live on is
+        // visible and it's obvious how far the content extends when dragging around.
+        var gridPattern = defs.append("pattern")
+            .attr("id", "resource-graph-grid")
+            .attr("patternUnits", "userSpaceOnUse")
+            .attr("width", "40")
+            .attr("height", "40");
+        gridPattern
+            .append("circle")
+            .attr("cx", "2")
+            .attr("cy", "2")
+            .attr("r", "1.5")
+            .attr("class", "resource-graph-grid-dot");
+
         this.createArrowMarker(defs, "arrow-normal", "arrow-normal", 10, 10, 66);
         this.createArrowMarker(defs, "arrow-highlight", "arrow-highlight", 15, 15, 48);
         this.createArrowMarker(defs, "arrow-highlight-expand", "arrow-highlight-expand", 15, 15, 56);
@@ -144,6 +200,17 @@ class ResourceGraph {
             .attr("stroke", "var(--neutral-fill-secondary-hover)")
             .attr("stroke-width", "15");
 
+        // The grid is deliberately much larger than any realistic graph so panning never runs off the edge
+        // of the drawn canvas.
+        this.baseGroup
+            .insert("rect", ":first-child")
+            .attr("class", "resource-graph-background")
+            .attr("x", -20000)
+            .attr("y", -20000)
+            .attr("width", 40000)
+            .attr("height", 40000)
+            .attr("fill", "url(#resource-graph-grid)");
+
         this.linkElementsG = this.baseGroup.append("g").attr("class", "links");
         this.nodeElementsG = this.baseGroup.append("g").attr("class", "nodes");
 
@@ -162,8 +229,7 @@ class ResourceGraph {
     }
 
     // Releases every pinned node so the layout is driven by the simulation again.
-    unpinAllNodes() {
-        var hasPinnedNodes = false;
+    unpinAllNodes() {        var hasPinnedNodes = false;
         for (const node of this.nodes) {
             if (node.pinned) {
                 node.pinned = false;
@@ -186,6 +252,181 @@ class ResourceGraph {
         }
 
         this.nodeElements.classed("resource-group-pinned", n => !!n.pinned);
+    }
+
+    // Unpins any node that the supplied node has been dropped on top of. Collision alone can't separate two
+    // pinned nodes because neither is free to move, so the older pin yields to the newer one.
+    releasePinnedNodesOverlapping(node) {
+        const minimumDistance = NODE_COLLIDE_RADIUS * 2;
+
+        for (const other of this.nodes) {
+            if (other === node || !other.pinned) {
+                continue;
+            }
+
+            const dx = (other.x || 0) - (node.x || 0);
+            const dy = (other.y || 0) - (node.y || 0);
+            if (Math.sqrt(dx * dx + dy * dy) < minimumDistance) {
+                other.pinned = false;
+                other.fx = null;
+                other.fy = null;
+            }
+        }
+    }
+
+    /*
+     * Works out where each node belongs in the hierarchy.
+     *
+     * The graph is a DAG rather than a tree, because a resource can be depended on by several others. To lay
+     * it out as a readable hierarchy each node is assigned to the first parent that reaches it in a breadth
+     * first walk from the roots, which produces a spanning tree. Links to additional parents still render;
+     * they just don't get a say in where the node sits.
+     *
+     * Depth becomes a fixed row (targetY) and the spanning tree drives a tidy left-to-right ordering
+     * (targetX): leaves are laid out in order and each parent is centred over its own children.
+     */
+    computeHierarchy() {
+        const nodesById = new Map(this.nodes.map(n => [n.id, n]));
+        const childIds = new Map();
+        const hasParent = new Set();
+
+        for (const link of this.links) {
+            const source = linkEndId(link.source);
+            const target = linkEndId(link.target);
+            if (!nodesById.has(source) || !nodesById.has(target)) {
+                continue;
+            }
+
+            if (!childIds.has(source)) {
+                childIds.set(source, []);
+            }
+            childIds.get(source).push(target);
+            hasParent.add(target);
+        }
+
+        const roots = this.nodes.filter(n => !hasParent.has(n.id));
+
+        const depth = new Map();
+        const treeChildren = new Map();
+        const visited = new Set();
+        const queue = [];
+
+        for (const root of roots) {
+            visited.add(root.id);
+            depth.set(root.id, 0);
+            queue.push(root.id);
+        }
+
+        // Any node left unvisited is only reachable through a cycle, so promote it to a root of its own
+        // rather than leaving it without a position.
+        for (const node of this.nodes) {
+            if (!visited.has(node.id)) {
+                visited.add(node.id);
+                depth.set(node.id, 0);
+                roots.push(node);
+                queue.push(node.id);
+            }
+
+            // Walk what is reachable so far before considering the next unvisited node, otherwise every
+            // member of a cycle gets promoted instead of just the first one.
+            while (queue.length > 0) {
+                const current = queue.shift();
+                const currentDepth = depth.get(current);
+
+                for (const child of (childIds.get(current) || [])) {
+                    if (visited.has(child)) {
+                        continue;
+                    }
+
+                    visited.add(child);
+                    depth.set(child, currentDepth + 1);
+
+                    if (!treeChildren.has(current)) {
+                        treeChildren.set(current, []);
+                    }
+                    treeChildren.get(current).push(child);
+                    queue.push(child);
+                }
+            }
+        }
+
+        const xById = new Map();
+        let nextLeafSlot = 0;
+
+        const assignX = (id) => {
+            const children = treeChildren.get(id);
+            if (!children || children.length === 0) {
+                const x = nextLeafSlot * SIBLING_SPACING;
+                nextLeafSlot++;
+                xById.set(id, x);
+                return x;
+            }
+
+            const childXs = children.map(assignX);
+            const x = (Math.min(...childXs) + Math.max(...childXs)) / 2;
+            xById.set(id, x);
+            return x;
+        };
+
+        for (const root of roots) {
+            assignX(root.id);
+        }
+
+        // Centre the laid out tree on the origin so the initial view is balanced.
+        const allX = [...xById.values()];
+        const xOffset = allX.length > 0 ? (Math.min(...allX) + Math.max(...allX)) / 2 : 0;
+        const maxDepth = Math.max(0, ...depth.values());
+        const yOffset = (maxDepth * LAYER_HEIGHT) / 2;
+
+        for (const node of this.nodes) {
+            node.depth = depth.get(node.id) || 0;
+            node.targetX = (xById.get(node.id) || 0) - xOffset;
+            node.targetY = (node.depth * LAYER_HEIGHT) - yOffset;
+
+            // Seed brand new nodes on their target so the first frame is already laid out as a hierarchy
+            // instead of animating in from the middle of the canvas.
+            if (node.x === undefined || node.y === undefined) {
+                node.x = node.targetX;
+                node.y = node.targetY;
+            }
+        }
+
+        function linkEndId(end) {
+            return typeof end === "object" ? end.id : end;
+        }
+    }
+
+    // Frames the whole graph in the viewport. Skipped once the user has zoomed or panned so their framing
+    // isn't yanked away when a resource changes state.
+    fitToView() {
+        if (this.userAdjustedView || this.nodes.length === 0) {
+            return;
+        }
+
+        const container = document.querySelector(".resource-graph-container");
+        if (!container || container.clientWidth === 0) {
+            return;
+        }
+
+        const padding = NODE_COLLIDE_RADIUS;
+        const xs = this.nodes.map(n => n.x || 0);
+        const ys = this.nodes.map(n => n.y || 0);
+        const minX = Math.min(...xs) - padding;
+        const maxX = Math.max(...xs) + padding;
+        const minY = Math.min(...ys) - padding;
+        const maxY = Math.max(...ys) + padding;
+
+        const width = Math.max(maxX - minX, 1);
+        const height = Math.max(maxY - minY, 1);
+
+        // Never scale up past 1. A small graph should sit at natural size in the middle rather than being
+        // blown up to fill the panel.
+        const scale = Math.min(1, container.clientWidth / width, container.clientHeight / height);
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        const transform = d3.zoomIdentity.scale(scale).translate(-centerX, -centerY);
+        this.svg.call(this.zoom.transform, transform);
     }
 
     zoomIn() {
@@ -212,11 +453,15 @@ class ResourceGraph {
     }
 
     resize() {
-        var container = document.querySelector(".resources-summary-layout");
-        if (container) {
+        // Measure the graph container rather than the whole summary panel. The panel also contains the tabs
+        // row, so measuring it made the drawing area taller than the space the graph actually occupies.
+        var container = document.querySelector(".resource-graph-container");
+        if (container && container.clientWidth > 0 && container.clientHeight > 0) {
             var width = container.clientWidth;
-            var height = Math.max(container.clientHeight - 50, 0);
+            var height = container.clientHeight;
             this.svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+            this.fitToView();
         }
     }
 
@@ -368,6 +613,10 @@ class ResourceGraph {
 
             this.links.push(...resourceLinks);
         }
+
+        // Positions have to be resolved before the nodes are rendered so brand new nodes can be seeded on
+        // their place in the hierarchy rather than flying in from the origin.
+        this.computeHierarchy();
 
         // Update nodes
         this.nodeElements = this.nodeElementsG
@@ -598,6 +847,9 @@ class ResourceGraph {
             for (let i = 0; i < 300; i++) {
                 this.simulation.tick();
             }
+
+            this.onTick();
+            this.fitToView();
         }
 
         this.simulation.restart();

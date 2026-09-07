@@ -8,25 +8,35 @@ using Aspire.Dashboard.Resources;
 using Microsoft.Extensions.Localization;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components.Extensions;
+using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons;
 
 namespace Aspire.Dashboard.Model.ResourceGraph;
 
 public static class ResourceGraphMapper
 {
     /// <summary>
+    /// The name of the synthetic entity that roots the graph. Prefixed so it can never collide with a real
+    /// resource name, which the app host restricts to letters, digits and dashes.
+    /// </summary>
+    public const string AppHostEntityName = "$apphost";
+
+    /// <summary>
     /// Maps every resource in the graph, deriving the parent-child structure from app host dependencies and
     /// rolling child health up through it.
     /// </summary>
     /// <remarks>
     /// The rollup needs to see the whole graph, so it is computed once here and shared by each mapped
-    /// resource rather than being recomputed per resource.
+    /// resource rather than being recomputed per resource. A synthetic app host entity is prepended so the
+    /// graph always has a single root to hang the hierarchy from, even when resources declare no
+    /// relationships at all.
     /// </remarks>
     public static List<ResourceDto> MapResources(
         IReadOnlyList<ResourceViewModel> graphResources,
         IDictionary<string, ResourceViewModel> resourcesByName,
         IStringLocalizer<Columns> columnsLoc,
         bool showHiddenResources,
-        IconResolver iconResolver)
+        IconResolver iconResolver,
+        string applicationName)
     {
         ArgumentNullException.ThrowIfNull(graphResources);
 
@@ -40,7 +50,7 @@ public static class ResourceGraphMapper
                 g => g.Select(e => e.ChildName).Distinct(StringComparers.ResourceName).OrderBy(n => n, StringComparers.ResourceName).ToImmutableArray(),
                 StringComparers.ResourceName);
 
-        var dtos = new List<ResourceDto>(graphResources.Count);
+        var dtos = new List<ResourceDto>(graphResources.Count + 1);
         foreach (var resource in graphResources)
         {
             var childNames = childNamesByParent.TryGetValue(resource.Name, out var children) ? children : [];
@@ -49,7 +59,47 @@ public static class ResourceGraphMapper
             dtos.Add(MapResource(resource, resourcesByName, columnsLoc, iconResolver, childNames, healthState));
         }
 
+        if (graphResources.Count > 0)
+        {
+            var rootNames = ResourceGraphHealth.GetRootNames(graphResources, edges);
+            var appHostState = HealthStateExtensions.WorstOf(rootNames.Select(n => healthStates.TryGetValue(n, out var s) ? s : HealthState.Unknown));
+
+            dtos.Insert(0, CreateAppHostResource(applicationName, rootNames, appHostState));
+        }
+
         return dtos;
+    }
+
+    /// <summary>
+    /// Builds the synthetic entity that represents the app host itself and roots the graph.
+    /// </summary>
+    private static ResourceDto CreateAppHostResource(string applicationName, ImmutableArray<string> rootNames, HealthState healthState)
+    {
+        var (healthIcon, healthColor) = HealthModelIconHelpers.GetHealthStateIcon(healthState);
+
+        return new ResourceDto
+        {
+            Name = AppHostEntityName,
+            ResourceType = ControlsStrings.ResourceGraphAppHostType,
+            DisplayName = applicationName,
+            Uid = AppHostEntityName,
+            ResourceIcon = new IconDto
+            {
+                Path = GetIconPathData(new Icons.Filled.Size24.AppFolder()),
+                Color = "var(--neutral-foreground-rest)",
+                Tooltip = ControlsStrings.ResourceGraphAppHostType
+            },
+            StateIcon = new IconDto
+            {
+                Path = GetIconPathData(healthIcon),
+                Color = healthColor.ToAttributeValue()!,
+                Tooltip = healthState.ToString()
+            },
+            ChildNames = rootNames,
+            HealthState = healthState.ToString(),
+            EndpointUrl = null,
+            EndpointText = null
+        };
     }
 
     public static ResourceDto MapResource(

@@ -417,7 +417,7 @@ public partial class Resources : ComponentBase, IComponentWithTelemetry, IAsyncD
         }
 
         var activeResources = _resourceByName.Values.Where(Filter).OrderBy(e => e.ResourceType).ThenBy(e => e.Name).ToList();
-        var resources = ResourceGraphMapper.MapResources(activeResources, _resourceByName, ColumnsLoc, PageViewModel.ShowHiddenResources, IconResolver);
+        var resources = ResourceGraphMapper.MapResources(activeResources, _resourceByName, ColumnsLoc, PageViewModel.ShowHiddenResources, IconResolver, DashboardClient.ApplicationName);
         await _jsModule.InvokeVoidAsync("updateResourcesGraph", resources);
     }
 
