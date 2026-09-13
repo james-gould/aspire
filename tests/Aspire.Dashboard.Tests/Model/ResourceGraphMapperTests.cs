@@ -4,7 +4,6 @@
 using System.Collections.Immutable;
 using System.Xml.Linq;
 using Aspire.Dashboard.Model;
-using Aspire.Dashboard.Model.HealthModel;
 using Aspire.Dashboard.Model.ResourceGraph;
 using Aspire.Dashboard.Resources;
 using Aspire.Tests.Shared.DashboardModel;

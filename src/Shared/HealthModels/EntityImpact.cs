@@ -1,7 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace Aspire.Dashboard.Model.HealthModel;
+namespace Aspire.HealthModels;
 
 /// <summary>
 /// Controls how much of a child entity's health state is propagated to its parents.

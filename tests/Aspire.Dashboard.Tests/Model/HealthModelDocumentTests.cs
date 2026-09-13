@@ -5,6 +5,7 @@ using System.Text.Json;
 using Aspire.Dashboard.Model;
 using Aspire.Dashboard.Model.HealthModel;
 using Aspire.Tests.Shared.DashboardModel;
+using HealthModelPlayground;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using VerifyXunit;
 using Xunit;
@@ -53,6 +54,29 @@ public class HealthModelDocumentTests
         Assert.Equal(changed.Dependencies, rebound.Dependencies);
         Assert.Equal(original.Relationships, restarted.Relationships);
         Assert.Equal(changed.Name, rebound.Name);
+    }
+
+    [Fact]
+    public void PublishedPlaygroundDefinitionMatchesDashboardIdentitiesAndLayout()
+    {
+        var resources = HealthModelScenario.Resources.Select(resource =>
+        {
+            var relationships = resource.Dependencies.Select(dependency => new RelationshipViewModel(dependency, KnownRelationshipTypes.Reference)).ToList();
+            if (resource.ParentName is { } parent)
+            {
+                relationships.Add(new(parent, KnownRelationshipTypes.Parent));
+            }
+            return ModelTestHelpers.CreateResource(resource.Name, state: KnownResourceState.Running,
+                relationships: [.. relationships], replicaIndex: 1,
+                healthReports: [new(resource.HealthCheckName, resource.HealthStatus, null, null)]);
+        });
+        var current = HealthModelDocuments.Create(AspireHealthModelBuilder.Build(resources), "HealthModelSandbox.AppHost");
+        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "TestData", "healthmodel-playground.json"));
+        var imported = HealthModelDocuments.Deserialize(json, current);
+
+        Assert.Equal(
+            current.Entities.OrderBy(entity => entity.Name).Select(entity => (entity.Name, entity.CanvasPosition, entity.Impact, entity.Dependencies)),
+            imported.Entities.OrderBy(entity => entity.Name).Select(entity => (entity.Name, entity.CanvasPosition, entity.Impact, entity.Dependencies)));
     }
 
     [Fact]

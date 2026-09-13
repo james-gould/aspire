@@ -65,19 +65,6 @@ public sealed record HealthModelEntity
 }
 
 /// <summary>
-/// A directed parent-to-child edge in a health model.
-/// </summary>
-/// <remarks>
-/// Azure models relationships as standalone resources with immutable <c>parentEntityName</c> and
-/// <c>childEntityName</c>, and carries no health or aggregation configuration on the edge itself. Rollup
-/// tuning lives on the two entities instead: <see cref="HealthModelEntity.Impact"/> on the child and
-/// <see cref="HealthModelEntity.Dependencies"/> on the parent.
-/// </remarks>
-/// <param name="ParentEntityName">The name of the parent entity.</param>
-/// <param name="ChildEntityName">The name of the child entity.</param>
-public sealed record HealthModelRelationship(string ParentEntityName, string ChildEntityName);
-
-/// <summary>
 /// A complete health model: a set of entities and the relationships that connect them.
 /// </summary>
 /// <remarks>

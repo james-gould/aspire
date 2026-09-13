@@ -77,9 +77,9 @@ namespace Aspire.Dashboard.Resources {
         public static string HealthModelSubscriptionError => ResourceManager.GetString("HealthModelSubscriptionError", resourceCulture);
         /// <summary>Historical models are read-only.</summary>
         public static string HealthModelReadOnly => ResourceManager.GetString("HealthModelReadOnly", resourceCulture);
-        /// <summary>Features outside this local preview.</summary>
+        /// <summary>Local health and explicitly configured Azure publishing are separate.</summary>
         public static string HealthModelCloudBoundary => ResourceManager.GetString("HealthModelCloudBoundary", resourceCulture);
-        /// <summary>Purpose of the exported model definition.</summary>
+        /// <summary>Save the definition in the AppHost and configure a matching publisher and metrics producer.</summary>
         public static string HealthModelDefinitionHint => ResourceManager.GetString("HealthModelDefinitionHint", resourceCulture);
         /// <summary>Entity and relationship counts.</summary>
         public static string HealthModelEntityCount => ResourceManager.GetString("HealthModelEntityCount", resourceCulture);

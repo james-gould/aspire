@@ -52,12 +52,16 @@
     <Content Include="$(TestsSharedDir)TestCertificates\*.pfx" LinkBase="shared/TestCertificates" CopyToOutputDirectory="PreserveNewest" />
 
     <Content Include="..\..\src\Aspire.Dashboard\wwwroot\**\*.*" LinkBase="wwwroot" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="$(RepoRoot)playground\HealthModel\HealthModelScenario.cs" Link="shared\HealthModelScenario.cs" />
+    <Content Include="$(RepoRoot)playground\HealthModel\HealthModelSandbox.AppHost\aspire-healthmodel.json"
+             Link="TestData\healthmodel-playground.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- This project uses explicit imports; retain Verify's path metadata without its global usings. -->
     <Using Remove="Xunit;VerifyXunit;VerifyXunit.Verifier" />
     <Using Include="Aspire.Dashboard.ServiceClient" />
+    <Using Include="Aspire.HealthModels" />
     <Using Include="Aspire.Tests.Utils" />
   </ItemGroup>
 

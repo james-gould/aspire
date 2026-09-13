@@ -226,8 +226,8 @@
   <data name="HealthModelInvalidTopology" xml:space="preserve"><value>This AppHost cannot be represented as a health-model hierarchy. Check for cyclic or duplicate dependencies. The Resources graph can still show the reference graph.</value></data>
   <data name="HealthModelSubscriptionError" xml:space="preserve"><value>Resource updates stopped. Reload the page to reconnect; the displayed health may be stale.</value></data>
   <data name="HealthModelReadOnly" xml:space="preserve"><value>This is a historical run. Switch to the live run to edit the model.</value></data>
-  <data name="HealthModelCloudBoundary" xml:space="preserve"><value>Local health checks only. Timeline history, Azure signal queries, alerts, discovery and automatic Azure provisioning are not included in this preview.</value></data>
-  <data name="HealthModelDefinitionHint" xml:space="preserve"><value>The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. It is not a deployment template; an Azure publisher must bind resources and signals before provisioning. Azure layout and evaluation parity have not yet been validated.</value></data>
+  <data name="HealthModelCloudBoundary" xml:space="preserve"><value>Live health here is local. Azure publishing is an explicit AppHost opt-in; this view does not query Azure. Timelines, alerts and discovery are not included.</value></data>
+  <data name="HealthModelDefinitionHint" xml:space="preserve"><value>The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. Save it in the AppHost project and configure Azure health-model publishing with a matching metrics producer. Azure layout and evaluation parity still require service-level validation.</value></data>
   <data name="HealthModelEntityCount" xml:space="preserve"><value>{0} entities, {1} relationships</value><comment>{0} is an entity count, {1} is a relationship count.</comment></data>
   <data name="HealthModelHealthy" xml:space="preserve"><value>Healthy</value></data>
   <data name="HealthModelDegraded" xml:space="preserve"><value>Degraded</value></data>

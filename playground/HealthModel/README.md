@@ -43,7 +43,7 @@ All other resources report Healthy. Once startup completes, the graph should sho
 | identity-api | Healthy | Healthy dependencies |
 | storefront / AppHost | Unhealthy | catalog-api |
 
-To try a different scenario, change a leaf's `HealthStatus` in `AppHost.cs` and restart.
+To try a different scenario, change a leaf's `HealthStatus` in `HealthModelScenario.cs` and restart.
 Both **Health** and **Resources > Graph** derive relationships from the AppHost. Health no
 longer invents Services/Infrastructure groups or automatically limits the impact of containers.
 
@@ -94,51 +94,101 @@ No environment variables, credentials, endpoint addresses, observed health value
 exception text are exported. Root identity, topology and positions are deliberately separate
 from the live signal readings.
 
-### Publishing boundary
+### Publish the model
 
-The export is a **portable definition, not an ARM/Bicep deployment template**. This iteration
-does not register an Azure publisher and does not create cloud resources. A future publisher
-should consume the project-owned definition rather than reconstructing a different graph:
-emit entities using its stable identities, emit the same relationships, and copy
-`canvasPosition`, impact and dependency settings to the Azure model.
+The AppHost opts into the experimental `Aspire.Hosting.Azure.HealthModels` integration in publish
+mode. Local startup remains container-free and never provisions Azure.
 
-Local lifecycle and health-check signals need explicit cloud equivalents (metrics, queries,
-or an external signal producer). The publisher must also bind AppHost resources to deployed
-ARM resource IDs and configure authentication. A matching picture alone does not establish
-equivalent cloud health evaluation.
+The checked-in `HealthModelSandbox.AppHost\aspire-healthmodel.json` contains the default 12-entity,
+11-relationship design with the same stable IDs and positions as the local dashboard. To publish
+your edits, **Save changes**, **Export model**, and replace that project-owned file. Browser storage
+is not read by the publisher. After changing relationships or check registrations, re-export the
+definition; stale bindings fail publishing rather than silently dropping checks.
 
-The initial documented Bicep target is
-[`Microsoft.CloudHealth/healthmodels@2026-05-01-preview`](https://learn.microsoft.com/azure/templates/microsoft.cloudhealth/2026-05-01-preview/healthmodels).
-The health model is **a separate Azure resource**, not a workspace or a child of a workspace:
+From the repository root, generate the assets without Azure credentials or cloud mutations:
 
-| Resource | Purpose |
+```powershell
+aspire publish --apphost .\playground\HealthModel\HealthModelSandbox.AppHost\HealthModelSandbox.AppHost.csproj --output-path .\artifacts\health-model-publish --non-interactive
+```
+
+For testing the CLI built from this checkout, replace `aspire` with
+`dotnet .\artifacts\bin\Aspire.Cli\Debug\net10.0\aspire.dll`.
+
+| Output | Purpose |
 |---|---|
-| `Microsoft.CloudHealth/healthmodels` | Owns entities, relationships and health configuration |
-| `Microsoft.Monitor/accounts` | Optional Azure Monitor workspace for Prometheus/PromQL signals |
-| `Microsoft.OperationalInsights/workspaces` | Optional Log Analytics workspace for KQL signals |
+| `main.bicep` | Infrastructure entrypoint using Aspire's existing Azure publisher |
+| `health\health.bicep` | AHM, entities, relationships, 22 signal definitions, AMW, DCE, DCR and RBAC |
+| `health-metrics\health-metrics.bicep` | Internally accessible metrics producer, kept at one replica |
+| `health-collector\health-collector.bicep` | Prometheus collector with managed-identity remote write |
+| `azure\`, `azure-acr\` | Container Apps environment and registry managed by Aspire |
 
-A future publisher should create the appropriate signal sources rather than automatically
-creating both workspace types. Azure resource metrics can reference the monitored resource directly.
+The compute modules are separate from `main.bicep`, as in the existing Azure publishing pipeline.
+Their image and infrastructure parameters remain deferred. `aspire deploy` is the operation that
+builds/pushes the producer image, provisions infrastructure, and applies the compute modules; running
+only `main.bicep` will not deploy the producer or collector.
 
-Important integration constraints:
+The AHM module targets **`Microsoft.CloudHealth/healthmodels@2026-09-01-preview`**. The health
+model is a separate Azure resource, not a workspace child. It preserves entity identities, directed
+edges, fractional coordinates, impact, objectives and dependency aggregation. The identities get
+no broad owner/contributor permissions: the model has **Monitoring Reader** on the AMW and the
+collector has **Monitoring Metrics Publisher** on the DCR.
 
-- Azure creates its root entity with the **model's name**. The publisher must keep that identity
-  consistent with the root referenced by the exported relationships.
-- Relationship endpoints use entity resource names. Rewiring requires replacing the relationship,
-  not updating its endpoints in place.
-- The local editor preserves X/Y values independently of zoom. The REST schema defines floating-point
-  coordinates while the generated Bicep reference presents integers, and the portal's coordinate
-  origin/anchor is not documented. Validate the conversion against Azure before claiming identical
-  positioning; do not silently round exported coordinates.
-- `signalGroups.external` is read-only. Aspire health-check results require ongoing
-  [health-report ingestion](https://learn.microsoft.com/azure/azure-monitor/health-models/health-report-ingestion)
-  or an explicit metric/query equivalent. Bicep cannot provision a persistent external health result.
-- The local threshold evaluator follows the inclusive comparisons in the pinned API schema.
-  Conceptual examples differ at equality, and some Unknown-state edge cases are underspecified.
-  Cloud execution parity still needs service-level validation.
+### Health signals in Azure
 
-This preview does not include historical timelines, alert delivery, Azure discovery,
-cloud metric/query execution or arbitrary browser-defined entities and relationships.
+`HealthModelScenario.cs` owns both the simulated topology and its validators. The AppHost and
+`HealthModel.Metrics` register the same checks with `HealthCheckService`. `/metrics` executes
+those checks and reports each resource's own status, not its already-aggregated parent status:
+
+```text
+aspire_health_status{resource_name="payments-gateway",health_check="payments-gateway_check",replica_index="1"} 1
+aspire_health_status{resource_name="search-index",health_check="search-index_check",replica_index="1"} 0
+```
+
+The producer emits 22 series: 11 check results plus 11 lifecycle results. Values are **2 Healthy,
+1 Degraded, 0 Unhealthy**. Simulated lifecycle states are Healthy while the producer is serving;
+they do not claim to monitor real databases. `/alive` reports process liveness independently of
+the deliberately unhealthy sample entities.
+
+Prometheus scrapes every 30 seconds and remote-writes through the DCE/DCR into the AMW using a
+dedicated user-assigned identity. The model evaluates one `PrometheusMetricsQuery` signal per
+binding, once per minute: `< 1` is Unhealthy and `< 2` is Degraded. AHM performs parent rollup using
+the saved dependency policies. No credentials or health-report exception details appear in the metrics.
+
+To inspect the producer alone:
+
+```powershell
+dotnet run --project .\playground\HealthModel\HealthModel.Metrics\HealthModel.Metrics.csproj --no-launch-profile -- --urls http://localhost:5088
+```
+
+### Deployment boundary
+
+Deployment requires an Azure subscription/region supporting the current CloudHealth API and managed
+Prometheus, Container Apps, a working container-image build path, and permission to create resources
+and role assignments. The generated model uses authenticated public-network ingestion; private-link
+configuration and existing-workspace reuse are outside this first version.
+
+This remains a simulation. Arbitrary AppHost delegates are not automatically copied into deployed
+workloads. For a real application, instrument the workload or supply an equivalent probe that emits
+the documented resource/check/replica labels. The sample's logical database entities deliberately do
+not pretend to have deployed database ARM IDs.
+
+Missing, invalid or older-than-three-minute measurements produce an empty PromQL result instead of
+manufactured Healthy values. AHM's empty-result/Unknown transitions, RBAC propagation and Azure portal
+coordinate anchoring still require service-level validation. Saved numeric coordinates are preserved,
+but identical pixels and full local/cloud evaluation parity are not yet claimed.
+
+Relationship endpoints use entity names; rewiring creates a replacement relationship. The first
+version uses incremental deployment, so removing entities, relationships or definitions from the
+file does not automatically delete their old Azure resources. Use a fresh model for topology-removal
+experiments or explicitly remove obsolete resources before comparing graphs. Deletion reconciliation
+is not implemented.
+
+The generated Azure resource group owns the sample infrastructure. Use the application's normal
+Azure teardown/resource-group cleanup workflow when finished; publishing itself creates no Azure
+resources and needs no cloud cleanup.
+
+The local dashboard does not include historical timelines, alert delivery, Azure discovery,
+remote Azure health reads or arbitrary browser-defined entities and relationships.
 Cyclic AppHost references remain inspectable in **Resources > Graph**, but the Health
 designer reports them as unsupported rather than silently dropping edges. Requiring an acyclic,
 root-connected topology is a local lite-product restriction, not a claim that Azure prohibits

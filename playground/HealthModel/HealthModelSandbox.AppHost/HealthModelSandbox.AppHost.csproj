@@ -11,10 +11,14 @@
 
   <ItemGroup>
     <AspireProjectOrPackageReference Include="Aspire.Hosting.AppHost" />
+    <AspireProjectOrPackageReference Include="Aspire.Hosting.Azure.HealthModels" />
+    <ProjectReference Include="..\HealthModel.Metrics\HealthModel.Metrics.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\..\KnownResourceNames.cs" Link="KnownResourceNames.cs" />
+    <Compile Include="..\HealthModelScenario.cs" Link="HealthModelScenario.cs" />
+    <None Update="aspire-healthmodel.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

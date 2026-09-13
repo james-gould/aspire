@@ -28,8 +28,8 @@
         <note />
       </trans-unit>
       <trans-unit id="HealthModelCloudBoundary">
-        <source>Local health checks only. Timeline history, Azure signal queries, alerts, discovery and automatic Azure provisioning are not included in this preview.</source>
-        <target state="new">Local health checks only. Timeline history, Azure signal queries, alerts, discovery and automatic Azure provisioning are not included in this preview.</target>
+        <source>Live health here is local. Azure publishing is an explicit AppHost opt-in; this view does not query Azure. Timelines, alerts and discovery are not included.</source>
+        <target state="new">Live health here is local. Azure publishing is an explicit AppHost opt-in; this view does not query Azure. Timelines, alerts and discovery are not included.</target>
         <note />
       </trans-unit>
       <trans-unit id="HealthModelDefaultLayout">
@@ -38,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="HealthModelDefinitionHint">
-        <source>The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. It is not a deployment template; an Azure publisher must bind resources and signals before provisioning. Azure layout and evaluation parity have not yet been validated.</source>
-        <target state="new">The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. It is not a deployment template; an Azure publisher must bind resources and signals before provisioning. Azure layout and evaluation parity have not yet been validated.</target>
+        <source>The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. Save it in the AppHost project and configure Azure health-model publishing with a matching metrics producer. Azure layout and evaluation parity still require service-level validation.</source>
+        <target state="new">The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. Save it in the AppHost project and configure Azure health-model publishing with a matching metrics producer. Azure layout and evaluation parity still require service-level validation.</target>
         <note />
       </trans-unit>
       <trans-unit id="HealthModelDegraded">

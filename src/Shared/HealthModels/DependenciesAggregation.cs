@@ -1,7 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-namespace Aspire.Dashboard.Model.HealthModel;
+namespace Aspire.HealthModels;
 
 /// <summary>
 /// How an entity aggregates the health of its child entities into a single state.
@@ -48,8 +48,8 @@ public sealed record DependenciesAggregation
 /// The strategy an entity uses to combine the health states of its children.
 /// </summary>
 /// <remarks>
-/// Values match the <c>DependenciesAggregationType</c> enum of the <c>2026-05-01-preview</c> Azure API version.
-/// <c>BestOf</c> exists only in later preview versions that have no Bicep types generated yet, so it is omitted.
+/// The lite editor supports this subset of the <c>2026-09-01-preview</c> Azure API's aggregation types.
+/// <c>BestOf</c> is intentionally outside the initial editor's supported policies.
 /// </remarks>
 public enum DependenciesAggregationType
 {

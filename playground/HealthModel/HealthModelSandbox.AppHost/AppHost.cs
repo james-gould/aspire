@@ -1,10 +1,11 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+#pragma warning disable ASPIREAZUREHEALTH001
+
 using Aspire.Hosting.Eventing;
 using Aspire.Hosting.Lifecycle;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+using HealthModelPlayground;
 
 // Playground for the health model and the resource graph.
 //
@@ -35,41 +36,39 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-builder.Services.TryAddEventingSubscriber<TestResourceLifecycle>();
+HealthModelScenario.AddHealthChecks(builder.Services);
+var resources = HealthModelScenario.Resources.ToDictionary(resource => resource.Name, AddTestResource, StringComparer.Ordinal);
+foreach (var resource in HealthModelScenario.Resources)
+{
+    if (resource.ParentName is { } parent)
+    {
+        resources[resource.Name].WithParentRelationship(resources[parent]);
+    }
+    foreach (var dependency in resource.Dependencies)
+    {
+        resources[resource.Name].WithReferenceRelationship(resources[dependency]);
+    }
+}
 
-// Reference the server in this simulated topology. Referencing the database as well as declaring its
-// parent would give it two incoming edges and leave the server at the top level of the graph.
-var ordersDbServer = AddTestResource("orders-db-server", HealthStatus.Healthy, "Accepting connections.");
-AddTestResource("orders-db", HealthStatus.Healthy, "Migrations applied.")
-    .WithParentRelationship(ordersDbServer);
+if (builder.ExecutionContext.IsPublishMode)
+{
+    builder.AddAzureContainerAppEnvironment("azure");
+    var health = builder.AddAzureHealthModel("health", "aspire-healthmodel.json");
+    var metrics = builder.AddProject<Projects.HealthModel_Metrics>("health-metrics")
+        .WithHttpEndpoint(name: "http", targetPort: 8080)
+        .WithHttpHealthCheck("/alive")
+        .PublishAsAzureContainerApp((_, app) =>
+        {
+            app.Template.Scale.MinReplicas = 1;
+            app.Template.Scale.MaxReplicas = 1;
+        });
 
-var paymentsGateway = AddTestResource("payments-gateway", HealthStatus.Degraded, "Elevated latency from the payment provider.");
-
-var checkoutApi = AddTestResource("checkout-api", HealthStatus.Healthy, "Accepting orders.")
-    .WithReferenceRelationship(ordersDbServer)
-    .WithReferenceRelationship(paymentsGateway);
-
-// Catalog branch.
-var catalogDbServer = AddTestResource("catalog-db-server", HealthStatus.Healthy, "Accepting connections.");
-AddTestResource("catalog-db", HealthStatus.Healthy, "Migrations applied.")
-    .WithParentRelationship(catalogDbServer);
-
-var searchIndex = AddTestResource("search-index", HealthStatus.Unhealthy, "Index rebuild failed.", exceptionMessage: "Shard 3 is offline.");
-
-var catalogApi = AddTestResource("catalog-api", HealthStatus.Healthy, "Serving product data.")
-    .WithReferenceRelationship(catalogDbServer)
-    .WithReferenceRelationship(searchIndex);
-
-// Identity branch, kept entirely healthy so there is a green path to compare the other two against.
-var identityCache = AddTestResource("identity-cache", HealthStatus.Healthy, "Cache warm.");
-
-var identityApi = AddTestResource("identity-api", HealthStatus.Healthy, "Issuing tokens.")
-    .WithReferenceRelationship(identityCache);
-
-AddTestResource("storefront", HealthStatus.Healthy, "Serving customers.")
-    .WithReferenceRelationship(checkoutApi)
-    .WithReferenceRelationship(catalogApi)
-    .WithReferenceRelationship(identityApi);
+    builder.AddAzureContainerAppsHealthModelCollector("health-collector", health, metrics.GetEndpoint("http"));
+}
+else
+{
+    builder.Services.TryAddEventingSubscriber<TestResourceLifecycle>();
+}
 
 #if !SKIP_DASHBOARD_REFERENCE
 // This project is only added in playground projects to support development/debugging
@@ -78,21 +77,19 @@ AddTestResource("storefront", HealthStatus.Healthy, "Serving customers.")
 // dashboard launch experience, Refer to Directory.Build.props for the path to
 // the dashboard binary (defaults to the Aspire.Dashboard bin output in the
 // artifacts dir).
-builder.AddProject<Projects.Aspire_Dashboard>(KnownResourceNames.AspireDashboard);
+if (builder.ExecutionContext.IsRunMode)
+{
+    builder.AddProject<Projects.Aspire_Dashboard>(KnownResourceNames.AspireDashboard);
+}
 #endif
 
 builder.Build().Run();
 
-IResourceBuilder<TestResource> AddTestResource(string name, HealthStatus status, string? description = null, string? exceptionMessage = null)
+IResourceBuilder<TestResource> AddTestResource(HealthModelScenarioResource resource)
 {
-    builder.Services.AddHealthChecks()
-                    .AddCheck(
-                        $"{name}_check",
-                        () => new HealthCheckResult(status, description, exceptionMessage is null ? null : new InvalidOperationException(exceptionMessage)));
-
     return builder
-        .AddResource(new TestResource(name))
-        .WithHealthCheck($"{name}_check")
+        .AddResource(new TestResource(resource.Name))
+        .WithHealthCheck(resource.HealthCheckName)
         .WithInitialState(new()
         {
             ResourceType = "Test Resource",
