@@ -208,7 +208,7 @@
 }
 
 ::deep .resource-group-hover .resource-node {
-    fill: var(--neutral-fill-hover) !important;
+    fill: var(--neutral-fill-hover);
 }
 
 ::deep .resource-group-selected .resource-scale {
@@ -216,7 +216,7 @@
 }
 
 ::deep .resource-group-selected .resource-node {
-    fill: var(--neutral-fill-secondary-rest) !important;
+    fill: var(--neutral-fill-secondary-rest);
 }
 
 ::deep .resource-group-selected .resource-node-border {
@@ -348,18 +348,17 @@
     fill: context-stroke;
 }
 
-/* Health colouring deliberately outranks the neutral highlight stroke so hovering a link never hides the
-   health signal. The dash pattern and width still communicate the highlight. */
+/* Highlighting must not replace the health colour or turn a health path into a dashed line. */
 ::deep .resource-link-highlight {
     stroke: var(--neutral-stroke-hover);
-    stroke-dasharray: 5,5;
+    stroke-dasharray: none;
     stroke-width: 2;
     marker-end: url(#arrow-highlight);
 }
 
 ::deep .resource-link-highlight-expand {
     stroke: var(--neutral-stroke-hover);
-    stroke-dasharray: 5,5;
+    stroke-dasharray: none;
     stroke-width: 2;
     marker-end: url(#arrow-highlight-expand);
 }

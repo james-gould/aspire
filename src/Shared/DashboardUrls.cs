@@ -150,12 +150,16 @@ internal static class DashboardUrls
         return url;
     }
 
-    public static string HealthModelUrl(string? entity = null)
+    public static string HealthModelUrl(string? entity = null, string? view = null)
     {
         var url = $"/{HealthModelBasePath}";
         if (entity != null)
         {
             url = AddQueryString(url, "entity", entity);
+        }
+        if (view is not null)
+        {
+            url = AddQueryString(url, "view", view);
         }
 
         return url;

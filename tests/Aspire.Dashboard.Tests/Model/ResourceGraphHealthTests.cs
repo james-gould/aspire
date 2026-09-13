@@ -71,6 +71,22 @@ public class ResourceGraphHealthTests
             Assert.Single(ResourceGraphHealth.BuildEdges([api, hidden], showHiddenResources: true)));
     }
 
+    [Theory]
+    [InlineData(KnownRelationshipTypes.Reference)]
+    [InlineData(KnownRelationshipTypes.Parent)]
+    public void BuildEdges_HiddenSource_ExcludedUnlessShown(string relationshipType)
+    {
+        var visible = CreateResource("visible");
+        var hidden = CreateResource("hidden", hidden: true, relationships: [new RelationshipViewModel("visible", relationshipType)]);
+
+        Assert.Empty(ResourceGraphHealth.BuildEdges([visible, hidden], showHiddenResources: false));
+
+        var expected = relationshipType == KnownRelationshipTypes.Parent
+            ? new ResourceGraphEdge("visible", "hidden")
+            : new ResourceGraphEdge("hidden", "visible");
+        Assert.Equal(expected, Assert.Single(ResourceGraphHealth.BuildEdges([visible, hidden], showHiddenResources: true)));
+    }
+
     [Fact]
     public void BuildEdges_DuplicateRelationships_ProduceASingleEdge()
     {
@@ -221,6 +237,62 @@ public class ResourceGraphHealthTests
 
         Assert.Equal(HealthState.Unhealthy, states["a"]);
         Assert.Equal(HealthState.Unhealthy, states["b"]);
+    }
+
+    [Theory]
+    [InlineData(HealthStatus.Unhealthy, false, false)]
+    [InlineData(HealthStatus.Unhealthy, false, true)]
+    [InlineData(HealthStatus.Unhealthy, true, false)]
+    [InlineData(HealthStatus.Unhealthy, true, true)]
+    [InlineData(HealthStatus.Degraded, false, false)]
+    [InlineData(HealthStatus.Degraded, false, true)]
+    [InlineData(HealthStatus.Degraded, true, false)]
+    [InlineData(HealthStatus.Degraded, true, true)]
+    public void ComputeEffectiveStates_CycleInheritsExternalDependency_RegardlessOfTraversalOrder(
+        HealthStatus health, bool reverseResources, bool reverseEdges)
+    {
+        var a = CreateResource("a");
+        var b = CreateResource("b");
+        var leaf = CreateResource("leaf", health: health);
+        var dependent = CreateResource("dependent");
+        ResourceViewModel[] resources = [a, b, leaf, dependent];
+        ResourceGraphEdge[] edges = [new("a", "b"), new("b", "a"), new("a", "leaf"), new("dependent", "b")];
+        if (reverseResources)
+        {
+            Array.Reverse(resources);
+        }
+        if (reverseEdges)
+        {
+            Array.Reverse(edges);
+        }
+
+        var states = ResourceGraphHealth.ComputeEffectiveStates(resources, [.. edges]);
+        var expected = AspireHealthModelBuilder.MapHealthStatus(health);
+
+        Assert.Equal(4, states.Count);
+        Assert.All(states.Values, state => Assert.Equal(expected, state));
+
+        var recovered = ResourceGraphHealth.ComputeEffectiveStates(
+            [a, b, CreateResource("leaf"), dependent], [.. edges]);
+
+        Assert.All(recovered.Values, state => Assert.Equal(HealthState.Healthy, state));
+    }
+
+    [Fact]
+    public void ComputeEffectiveStates_LongDependencyChain_DoesNotRequireRecursion()
+    {
+        const int count = 5000;
+        var resources = Enumerable.Range(0, count)
+            .Select(i => CreateResource($"resource-{i}", health: i == count - 1 ? HealthStatus.Unhealthy : HealthStatus.Healthy))
+            .ToArray();
+        var edges = Enumerable.Range(0, count - 1)
+            .Select(i => new ResourceGraphEdge(resources[i].Name, resources[i + 1].Name))
+            .ToImmutableArray();
+
+        var states = ResourceGraphHealth.ComputeEffectiveStates(resources, edges);
+
+        Assert.Equal(count, states.Count);
+        Assert.All(states.Values, state => Assert.Equal(HealthState.Unhealthy, state));
     }
 
     [Fact]

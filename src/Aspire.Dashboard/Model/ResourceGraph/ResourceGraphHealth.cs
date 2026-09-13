@@ -40,7 +40,7 @@ public static class ResourceGraphHealth
     {
         ArgumentNullException.ThrowIfNull(resources);
 
-        var graphResources = resources.ToList();
+        var graphResources = resources.Where(r => !r.IsResourceHidden(showHiddenResources)).ToList();
         var edges = ImmutableArray.CreateBuilder<ResourceGraphEdge>();
         var seen = new HashSet<ResourceGraphEdge>();
 
@@ -191,68 +191,41 @@ public static class ResourceGraphHealth
     {
         ArgumentNullException.ThrowIfNull(resources);
 
-        var ownStates = new Dictionary<string, HealthState>(StringComparers.ResourceName);
+        var effectiveStates = new Dictionary<string, HealthState>(StringComparers.ResourceName);
         foreach (var resource in resources)
         {
-            ownStates[resource.Name] = GetOwnState(resource);
+            effectiveStates[resource.Name] = GetOwnState(resource);
         }
 
-        var childrenByParent = edges
-            .GroupBy(e => e.ParentName, StringComparers.ResourceName)
-            .ToDictionary(g => g.Key, g => g.Select(e => e.ChildName).ToArray(), StringComparers.ResourceName);
+        var parentsByChild = edges
+            .Where(e => effectiveStates.ContainsKey(e.ParentName) && effectiveStates.ContainsKey(e.ChildName))
+            .ToLookup(e => e.ChildName, e => e.ParentName, StringComparers.ResourceName);
 
-        var effectiveStates = new Dictionary<string, HealthState>(StringComparers.ResourceName);
+        // Propagate changes back to dependents until stable. Memoizing a recursive walk can cache a
+        // partially evaluated cycle (a -> b -> a, with a -> unhealthy-leaf), leaving b falsely healthy.
+        // States only increase in severity within this snapshot, so even cycles converge in at most
+        // three changes per resource. Starting from own state on each call also allows recovery.
+        var pending = new Queue<string>(effectiveStates.Keys);
+        var queued = new HashSet<string>(effectiveStates.Keys, StringComparers.ResourceName);
 
-        // A resource can be reached through several paths, so results are memoized. The visiting set only
-        // guards the current path: dependency chains are not guaranteed to be acyclic once Reference
-        // relationships are involved, and a cycle would otherwise recurse forever.
-        var visiting = new HashSet<string>(StringComparers.ResourceName);
-
-        foreach (var name in ownStates.Keys)
+        while (pending.TryDequeue(out var child))
         {
-            Resolve(name);
-        }
-
-        return effectiveStates;
-
-        HealthState Resolve(string name)
-        {
-            if (effectiveStates.TryGetValue(name, out var cached))
+            queued.Remove(child);
+            foreach (var parent in parentsByChild[child])
             {
-                return cached;
-            }
-
-            if (!ownStates.TryGetValue(name, out var state))
-            {
-                return HealthState.Unknown;
-            }
-
-            if (!visiting.Add(name))
-            {
-                // Re-entering a resource already on the current path. Return its own state so the cycle
-                // contributes something without recursing, and leave the memo unset so the fully resolved
-                // value is still computed by the outer frame.
-                return state;
-            }
-
-            try
-            {
-                if (childrenByParent.TryGetValue(name, out var children))
+                var state = HealthStateExtensions.WorstOf(effectiveStates[parent], effectiveStates[child]);
+                if (state != effectiveStates[parent])
                 {
-                    foreach (var child in children)
+                    effectiveStates[parent] = state;
+                    if (queued.Add(parent))
                     {
-                        state = HealthStateExtensions.WorstOf(state, Resolve(child));
+                        pending.Enqueue(parent);
                     }
                 }
             }
-            finally
-            {
-                visiting.Remove(name);
-            }
-
-            effectiveStates[name] = state;
-            return state;
         }
+
+        return effectiveStates;
     }
 
     /// <summary>

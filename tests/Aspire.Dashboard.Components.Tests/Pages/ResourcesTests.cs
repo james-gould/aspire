@@ -243,6 +243,7 @@ public partial class ResourcesTests : DashboardTestContext
 
         var resourceGraphModule = JSInterop.SetupModule("/js/app-resourcegraph.js");
         var initializeGraphInvocationHandler = resourceGraphModule.SetupVoid("initializeResourcesGraph", _ => true);
+        resourceGraphModule.SetupVoid("disposeResourcesGraph", _ => true).SetVoidResult();
 
         var navigationManager = Services.GetRequiredService<NavigationManager>();
         navigationManager.NavigateTo(DashboardUrls.ResourcesUrl(view: "Graph"));
@@ -281,6 +282,7 @@ public partial class ResourcesTests : DashboardTestContext
         resourceGraphModule.SetupVoid("initializeResourcesGraph", _ => true);
         resourceGraphModule.SetupVoid("updateResourcesGraph", _ => true);
         resourceGraphModule.SetupVoid("selectResource", _ => true);
+        resourceGraphModule.SetupVoid("disposeResourcesGraph", _ => true).SetVoidResult();
 
         var navigationManager = Services.GetRequiredService<NavigationManager>();
         navigationManager.NavigateTo(DashboardUrls.ResourcesUrl(view: "Graph"));
@@ -758,6 +760,7 @@ public partial class ResourcesTests : DashboardTestContext
         resourceGraphModule.SetupVoid("initializeResourcesGraph", _ => true);
         resourceGraphModule.SetupVoid("updateResourcesGraph", _ => true);
         resourceGraphModule.SetupVoid("updateResourcesGraphSelected", _ => true);
+        resourceGraphModule.SetupVoid("disposeResourcesGraph", _ => true).SetVoidResult();
 
         var cut = RenderComponent<Components.Pages.Resources>(builder =>
         {

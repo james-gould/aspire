@@ -1,0 +1,91 @@
+﻿{
+  "schemaVersion": 1,
+  "name": "aspire-app-health",
+  "applicationName": "SampleApp",
+  "entities": [
+    {
+      "name": "aspire-app-health",
+      "displayName": "AppHost",
+      "aspireResourceName": null,
+      "replicaIndex": null,
+      "canvasPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "impact": "Standard",
+      "healthObjective": null,
+      "dependencies": {
+        "aggregationType": "WorstOf",
+        "degradedThreshold": null,
+        "unhealthyThreshold": null,
+        "unit": "Absolute",
+        "ignoreUnknown": true
+      },
+      "localSignals": []
+    },
+    {
+      "name": "resource-api-4f52125c3d5b162d",
+      "displayName": "api",
+      "aspireResourceName": "api",
+      "replicaIndex": 0,
+      "canvasPosition": {
+        "x": 0,
+        "y": 180
+      },
+      "impact": "Standard",
+      "healthObjective": null,
+      "dependencies": {
+        "aggregationType": "WorstOf",
+        "degradedThreshold": null,
+        "unhealthyThreshold": null,
+        "unit": "Absolute",
+        "ignoreUnknown": true
+      },
+      "localSignals": [
+        {
+          "name": "resource-state",
+          "kind": "External"
+        }
+      ]
+    },
+    {
+      "name": "resource-database-cbf60de488b72f16",
+      "displayName": "database",
+      "aspireResourceName": "database",
+      "replicaIndex": 0,
+      "canvasPosition": {
+        "x": 0,
+        "y": 360
+      },
+      "impact": "Standard",
+      "healthObjective": null,
+      "dependencies": {
+        "aggregationType": "WorstOf",
+        "degradedThreshold": null,
+        "unhealthyThreshold": null,
+        "unit": "Absolute",
+        "ignoreUnknown": true
+      },
+      "localSignals": [
+        {
+          "name": "resource-state",
+          "kind": "External"
+        },
+        {
+          "name": "ready",
+          "kind": "External"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "parentEntityName": "aspire-app-health",
+      "childEntityName": "resource-api-4f52125c3d5b162d"
+    },
+    {
+      "parentEntityName": "resource-api-4f52125c3d5b162d",
+      "childEntityName": "resource-database-cbf60de488b72f16"
+    }
+  ]
+}

@@ -269,18 +269,29 @@ public class HealthModelEvaluatorTests
     }
 
     [Fact]
-    public void Evaluate_CyclicRelationships_DoesNotRecurseForever()
+    public void Evaluate_CyclicRelationships_ReportsInvalidHierarchy()
     {
         var definition = CreateModel(
             [Entity("root"), Entity("a"), Entity("b")],
             [("root", "a"), ("a", "b"), ("b", "a")]);
 
+        Assert.Throws<InvalidDataException>(() => HealthModelEvaluator.Evaluate(definition));
+    }
+
+    [Fact]
+    public void Evaluate_SharedDependency_ProducesOneNodeAndKeepsBothRelationships()
+    {
+        var definition = CreateModel(
+            [Entity("root"), Entity("a"), Entity("b"), Entity("shared", signals: [Signal("s", HealthState.Degraded)])],
+            [("root", "a"), ("root", "b"), ("a", "shared"), ("b", "shared")]);
+
         var snapshot = HealthModelEvaluator.Evaluate(definition);
 
-        Assert.Collection(snapshot.AllNodes,
-            n => Assert.Equal("root", n.Name),
-            n => Assert.Equal("a", n.Name),
-            n => Assert.Equal("b", n.Name));
+        Assert.Equal(4, snapshot.AllNodes.Length);
+        Assert.Equal(HealthState.Degraded, snapshot.State);
+        var shared = Assert.Single(snapshot.AllNodes, n => n.Name == "shared");
+        Assert.Same(shared, Assert.Single(snapshot.AllNodes.Single(n => n.Name == "a").Children));
+        Assert.Same(shared, Assert.Single(snapshot.AllNodes.Single(n => n.Name == "b").Children));
     }
 
     [Fact]

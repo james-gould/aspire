@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.XUnitV3Extensions" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+    <PackageReference Include="Verify.XunitV3" />
     <!-- axe-core accessibility scanning for the Playwright integration tests (AccessibilityTests). -->
     <PackageReference Include="Deque.AxeCore.Playwright" />
   </ItemGroup>
@@ -54,6 +55,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- This project uses explicit imports; retain Verify's path metadata without its global usings. -->
+    <Using Remove="Xunit;VerifyXunit;VerifyXunit.Verifier" />
     <Using Include="Aspire.Dashboard.ServiceClient" />
     <Using Include="Aspire.Tests.Utils" />
   </ItemGroup>

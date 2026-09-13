@@ -23,6 +23,134 @@ namespace Aspire.Dashboard.Resources {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class HealthModel {
+        /// <summary>Graph.</summary>
+        public static string HealthModelGraphTab => ResourceManager.GetString("HealthModelGraphTab", resourceCulture);
+        /// <summary>Entities.</summary>
+        public static string HealthModelEntitiesTab => ResourceManager.GetString("HealthModelEntitiesTab", resourceCulture);
+        /// <summary>Designer.</summary>
+        public static string HealthModelDesignerTab => ResourceManager.GetString("HealthModelDesignerTab", resourceCulture);
+        /// <summary>Local preview.</summary>
+        public static string HealthModelLocalPreview => ResourceManager.GetString("HealthModelLocalPreview", resourceCulture);
+        /// <summary>Live health from AppHost dependencies.</summary>
+        public static string HealthModelGraphHint => ResourceManager.GetString("HealthModelGraphHint", resourceCulture);
+        /// <summary>Instructions for editing the model.</summary>
+        public static string HealthModelDesignerHint => ResourceManager.GetString("HealthModelDesignerHint", resourceCulture);
+        /// <summary>Save changes.</summary>
+        public static string HealthModelSave => ResourceManager.GetString("HealthModelSave", resourceCulture);
+        /// <summary>Discard changes.</summary>
+        public static string HealthModelDiscard => ResourceManager.GetString("HealthModelDiscard", resourceCulture);
+        /// <summary>Arrange.</summary>
+        public static string HealthModelArrange => ResourceManager.GetString("HealthModelArrange", resourceCulture);
+        /// <summary>Undo.</summary>
+        public static string HealthModelUndo => ResourceManager.GetString("HealthModelUndo", resourceCulture);
+        /// <summary>Fit to view.</summary>
+        public static string HealthModelFit => ResourceManager.GetString("HealthModelFit", resourceCulture);
+        /// <summary>Zoom in.</summary>
+        public static string HealthModelZoomIn => ResourceManager.GetString("HealthModelZoomIn", resourceCulture);
+        /// <summary>Zoom out.</summary>
+        public static string HealthModelZoomOut => ResourceManager.GetString("HealthModelZoomOut", resourceCulture);
+        /// <summary>Export model.</summary>
+        public static string HealthModelExport => ResourceManager.GetString("HealthModelExport", resourceCulture);
+        /// <summary>Import model.</summary>
+        public static string HealthModelImport => ResourceManager.GetString("HealthModelImport", resourceCulture);
+        /// <summary>Unsaved changes.</summary>
+        public static string HealthModelUnsaved => ResourceManager.GetString("HealthModelUnsaved", resourceCulture);
+        /// <summary>Saved in this browser.</summary>
+        public static string HealthModelSaved => ResourceManager.GetString("HealthModelSaved", resourceCulture);
+        /// <summary>Default layout.</summary>
+        public static string HealthModelDefaultLayout => ResourceManager.GetString("HealthModelDefaultLayout", resourceCulture);
+        /// <summary>Confirmation after saving the model.</summary>
+        public static string HealthModelSaveSuccess => ResourceManager.GetString("HealthModelSaveSuccess", resourceCulture);
+        /// <summary>Error saving the model.</summary>
+        public static string HealthModelSaveError => ResourceManager.GetString("HealthModelSaveError", resourceCulture);
+        /// <summary>Error loading the saved model.</summary>
+        public static string HealthModelLoadError => ResourceManager.GetString("HealthModelLoadError", resourceCulture);
+        /// <summary>Error importing a model.</summary>
+        public static string HealthModelImportError => ResourceManager.GetString("HealthModelImportError", resourceCulture);
+        /// <summary>Confirmation after importing into the draft.</summary>
+        public static string HealthModelImportSuccess => ResourceManager.GetString("HealthModelImportSuccess", resourceCulture);
+        /// <summary>Error downloading the model.</summary>
+        public static string HealthModelExportError => ResourceManager.GetString("HealthModelExportError", resourceCulture);
+        /// <summary>Unsupported AppHost topology.</summary>
+        public static string HealthModelInvalidTopology => ResourceManager.GetString("HealthModelInvalidTopology", resourceCulture);
+        /// <summary>Resource updates have stopped.</summary>
+        public static string HealthModelSubscriptionError => ResourceManager.GetString("HealthModelSubscriptionError", resourceCulture);
+        /// <summary>Historical models are read-only.</summary>
+        public static string HealthModelReadOnly => ResourceManager.GetString("HealthModelReadOnly", resourceCulture);
+        /// <summary>Features outside this local preview.</summary>
+        public static string HealthModelCloudBoundary => ResourceManager.GetString("HealthModelCloudBoundary", resourceCulture);
+        /// <summary>Purpose of the exported model definition.</summary>
+        public static string HealthModelDefinitionHint => ResourceManager.GetString("HealthModelDefinitionHint", resourceCulture);
+        /// <summary>Entity and relationship counts.</summary>
+        public static string HealthModelEntityCount => ResourceManager.GetString("HealthModelEntityCount", resourceCulture);
+        /// <summary>Healthy.</summary>
+        public static string HealthModelHealthy => ResourceManager.GetString("HealthModelHealthy", resourceCulture);
+        /// <summary>Degraded.</summary>
+        public static string HealthModelDegraded => ResourceManager.GetString("HealthModelDegraded", resourceCulture);
+        /// <summary>Unhealthy.</summary>
+        public static string HealthModelUnhealthy => ResourceManager.GetString("HealthModelUnhealthy", resourceCulture);
+        /// <summary>Unknown.</summary>
+        public static string HealthModelUnknown => ResourceManager.GetString("HealthModelUnknown", resourceCulture);
+        /// <summary>All health states.</summary>
+        public static string HealthModelAllStates => ResourceManager.GetString("HealthModelAllStates", resourceCulture);
+        /// <summary>No matching entities.</summary>
+        public static string HealthModelNoMatch => ResourceManager.GetString("HealthModelNoMatch", resourceCulture);
+        /// <summary>Display name.</summary>
+        public static string HealthModelDisplayName => ResourceManager.GetString("HealthModelDisplayName", resourceCulture);
+        /// <summary>Entity ID.</summary>
+        public static string HealthModelEntityId => ResourceManager.GetString("HealthModelEntityId", resourceCulture);
+        /// <summary>Canvas X.</summary>
+        public static string HealthModelPositionX => ResourceManager.GetString("HealthModelPositionX", resourceCulture);
+        /// <summary>Canvas Y.</summary>
+        public static string HealthModelPositionY => ResourceManager.GetString("HealthModelPositionY", resourceCulture);
+        /// <summary>Health objective.</summary>
+        public static string HealthModelHealthObjective => ResourceManager.GetString("HealthModelHealthObjective", resourceCulture);
+        /// <summary>Health objective limitations.</summary>
+        public static string HealthModelObjectiveHint => ResourceManager.GetString("HealthModelObjectiveHint", resourceCulture);
+        /// <summary>Standard impact.</summary>
+        public static string HealthModelImpactStandard => ResourceManager.GetString("HealthModelImpactStandard", resourceCulture);
+        /// <summary>Limited impact.</summary>
+        public static string HealthModelImpactLimited => ResourceManager.GetString("HealthModelImpactLimited", resourceCulture);
+        /// <summary>Suppressed impact.</summary>
+        public static string HealthModelImpactSuppressed => ResourceManager.GetString("HealthModelImpactSuppressed", resourceCulture);
+        /// <summary>How impact affects parents.</summary>
+        public static string HealthModelImpactHint => ResourceManager.GetString("HealthModelImpactHint", resourceCulture);
+        /// <summary>Minimum healthy.</summary>
+        public static string HealthModelMinimumHealthy => ResourceManager.GetString("HealthModelMinimumHealthy", resourceCulture);
+        /// <summary>Maximum not healthy.</summary>
+        public static string HealthModelMaximumNotHealthy => ResourceManager.GetString("HealthModelMaximumNotHealthy", resourceCulture);
+        /// <summary>Entity count.</summary>
+        public static string HealthModelAbsolute => ResourceManager.GetString("HealthModelAbsolute", resourceCulture);
+        /// <summary>Percentage.</summary>
+        public static string HealthModelPercentage => ResourceManager.GetString("HealthModelPercentage", resourceCulture);
+        /// <summary>Threshold unit.</summary>
+        public static string HealthModelThresholdUnit => ResourceManager.GetString("HealthModelThresholdUnit", resourceCulture);
+        /// <summary>Optional degraded threshold.</summary>
+        public static string HealthModelDegradedThreshold => ResourceManager.GetString("HealthModelDegradedThreshold", resourceCulture);
+        /// <summary>Unhealthy threshold.</summary>
+        public static string HealthModelUnhealthyThreshold => ResourceManager.GetString("HealthModelUnhealthyThreshold", resourceCulture);
+        /// <summary>Ignore unknown dependencies.</summary>
+        public static string HealthModelIgnoreUnknown => ResourceManager.GetString("HealthModelIgnoreUnknown", resourceCulture);
+        /// <summary>Threshold evaluation directions.</summary>
+        public static string HealthModelThresholdHint => ResourceManager.GetString("HealthModelThresholdHint", resourceCulture);
+        /// <summary>Apply to draft.</summary>
+        public static string HealthModelApply => ResourceManager.GetString("HealthModelApply", resourceCulture);
+        /// <summary>Invalid entity settings.</summary>
+        public static string HealthModelInvalidSettings => ResourceManager.GetString("HealthModelInvalidSettings", resourceCulture);
+        /// <summary>Parents.</summary>
+        public static string HealthModelParents => ResourceManager.GetString("HealthModelParents", resourceCulture);
+        /// <summary>Signals reported by the local AppHost.</summary>
+        public static string HealthModelSignalsSource => ResourceManager.GetString("HealthModelSignalsSource", resourceCulture);
+        /// <summary>Health seen by parents.</summary>
+        public static string HealthModelPropagation => ResourceManager.GetString("HealthModelPropagation", resourceCulture);
+        /// <summary>Accessible canvas label.</summary>
+        public static string HealthModelCanvasLabel => ResourceManager.GetString("HealthModelCanvasLabel", resourceCulture);
+        /// <summary>Accessible relationship label.</summary>
+        public static string HealthModelRelationshipLabel => ResourceManager.GetString("HealthModelRelationshipLabel", resourceCulture);
+        /// <summary>Accessible entity label.</summary>
+        public static string HealthModelNodeLabel => ResourceManager.GetString("HealthModelNodeLabel", resourceCulture);
+        /// <summary>Select an entity to edit.</summary>
+        public static string HealthModelFocusDesigner => ResourceManager.GetString("HealthModelFocusDesigner", resourceCulture);
         
         private static global::System.Resources.ResourceManager resourceMan;
         

@@ -15,17 +15,17 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 //
 //   storefront                        (Healthy)   web front end
 //   ├── checkout-api                  (Healthy)
-//   │   ├── orders-db                 (Healthy)   database, child of its server
-//   │   │   └── orders-db-server      (Healthy)
+//   │   ├── orders-db-server          (Healthy)
+//   │   │   └── orders-db             (Healthy)   child of its server
 //   │   └── payments-gateway          (Degraded)  <- degrades the checkout branch
 //   ├── catalog-api                   (Healthy)
-//   │   ├── catalog-db                (Healthy)
-//   │   │   └── catalog-db-server     (Healthy)
+//   │   ├── catalog-db-server         (Healthy)
+//   │   │   └── catalog-db            (Healthy)   child of its server
 //   │   └── search-index              (Unhealthy) <- fails the catalog branch
 //   └── identity-api                  (Healthy)   fully healthy branch
 //       └── identity-cache            (Healthy)
 //
-// Only three resources are anything other than healthy, so every other colour in the graph has been
+// Only two resources are anything other than healthy, so every other colour in the graph has been
 // inherited. The expected result once everything has started:
 //
 //   storefront    Unhealthy  (worst of its branches, via catalog-api -> search-index)
@@ -37,27 +37,27 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 builder.Services.TryAddEventingSubscriber<TestResourceLifecycle>();
 
-// Checkout branch. The database hangs off its server as a parent/child pair, which is how a real database
-// integration models itself, so the graph gets a three-level chain to lay out.
+// Reference the server in this simulated topology. Referencing the database as well as declaring its
+// parent would give it two incoming edges and leave the server at the top level of the graph.
 var ordersDbServer = AddTestResource("orders-db-server", HealthStatus.Healthy, "Accepting connections.");
-var ordersDb = AddTestResource("orders-db", HealthStatus.Healthy, "Migrations applied.")
+AddTestResource("orders-db", HealthStatus.Healthy, "Migrations applied.")
     .WithParentRelationship(ordersDbServer);
 
 var paymentsGateway = AddTestResource("payments-gateway", HealthStatus.Degraded, "Elevated latency from the payment provider.");
 
 var checkoutApi = AddTestResource("checkout-api", HealthStatus.Healthy, "Accepting orders.")
-    .WithReferenceRelationship(ordersDb)
+    .WithReferenceRelationship(ordersDbServer)
     .WithReferenceRelationship(paymentsGateway);
 
 // Catalog branch.
 var catalogDbServer = AddTestResource("catalog-db-server", HealthStatus.Healthy, "Accepting connections.");
-var catalogDb = AddTestResource("catalog-db", HealthStatus.Healthy, "Migrations applied.")
+AddTestResource("catalog-db", HealthStatus.Healthy, "Migrations applied.")
     .WithParentRelationship(catalogDbServer);
 
 var searchIndex = AddTestResource("search-index", HealthStatus.Unhealthy, "Index rebuild failed.", exceptionMessage: "Shard 3 is offline.");
 
 var catalogApi = AddTestResource("catalog-api", HealthStatus.Healthy, "Serving product data.")
-    .WithReferenceRelationship(catalogDb)
+    .WithReferenceRelationship(catalogDbServer)
     .WithReferenceRelationship(searchIndex);
 
 // Identity branch, kept entirely healthy so there is a green path to compare the other two against.
@@ -114,23 +114,16 @@ internal sealed class TestResource(string name) : Resource(name), IResourceWithE
 /// </remarks>
 internal sealed class TestResourceLifecycle(ResourceNotificationService notificationService) : IDistributedApplicationEventingSubscriber
 {
-    public Task OnBeforeStartAsync(BeforeStartEvent @event, CancellationToken cancellationToken)
+    public async Task OnBeforeStartAsync(BeforeStartEvent @event, CancellationToken cancellationToken)
     {
-        foreach (var resource in @event.Model.Resources.OfType<TestResource>())
-        {
-            Task.Run(
-                async () =>
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
+        await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
 
-                    await notificationService.PublishUpdateAsync(
-                        resource,
-                        state => state with { State = new("Running", "success") });
-                },
-                cancellationToken);
-        }
-
-        return Task.CompletedTask;
+        // Keep startup work owned by the lifecycle event so cancellation and publication failures are
+        // observed instead of escaping from fire-and-forget tasks after the AppHost has stopped.
+        await Task.WhenAll(@event.Model.Resources.OfType<TestResource>().Select(resource =>
+            notificationService.PublishUpdateAsync(
+                resource,
+                state => state with { State = new("Running", "success") })));
     }
 
     public Task SubscribeAsync(IDistributedApplicationEventing eventing, DistributedApplicationExecutionContext executionContext, CancellationToken cancellationToken)

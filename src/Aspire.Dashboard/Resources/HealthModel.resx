@@ -199,4 +199,68 @@
   <data name="HealthModelViewResource" xml:space="preserve">
     <value>View resource</value>
   </data>
+  <data name="HealthModelGraphTab" xml:space="preserve"><value>Graph</value></data>
+  <data name="HealthModelEntitiesTab" xml:space="preserve"><value>Entities</value></data>
+  <data name="HealthModelDesignerTab" xml:space="preserve"><value>Designer</value></data>
+  <data name="HealthModelLocalPreview" xml:space="preserve"><value>Local preview</value></data>
+  <data name="HealthModelGraphHint" xml:space="preserve"><value>Live health from AppHost dependencies. Select an entity to inspect its signals and health propagation.</value></data>
+  <data name="HealthModelDesignerHint" xml:space="preserve"><value>Drag entities or use arrow keys to position them. Relationships come from the AppHost. Save changes to keep this layout.</value></data>
+  <data name="HealthModelSave" xml:space="preserve"><value>Save changes</value></data>
+  <data name="HealthModelDiscard" xml:space="preserve"><value>Discard changes</value></data>
+  <data name="HealthModelArrange" xml:space="preserve"><value>Arrange</value></data>
+  <data name="HealthModelUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="HealthModelFit" xml:space="preserve"><value>Fit to view</value></data>
+  <data name="HealthModelZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="HealthModelZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="HealthModelExport" xml:space="preserve"><value>Export model</value></data>
+  <data name="HealthModelImport" xml:space="preserve"><value>Import model</value></data>
+  <data name="HealthModelUnsaved" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="HealthModelSaved" xml:space="preserve"><value>Saved in this browser</value></data>
+  <data name="HealthModelDefaultLayout" xml:space="preserve"><value>Default layout</value></data>
+  <data name="HealthModelSaveSuccess" xml:space="preserve"><value>Model saved. Export it to keep a project-owned copy of the topology, positions and health settings.</value></data>
+  <data name="HealthModelSaveError" xml:space="preserve"><value>The model could not be saved. Your changes are still available in the designer.</value></data>
+  <data name="HealthModelLoadError" xml:space="preserve"><value>The saved model is not valid for this application. The live AppHost topology is shown with its default layout.</value></data>
+  <data name="HealthModelImportError" xml:space="preserve"><value>The model could not be imported. Use a version 1 model exported from this application with the same entities and relationships. Details are in the dashboard logs.</value></data>
+  <data name="HealthModelImportSuccess" xml:space="preserve"><value>Model imported into the designer. Save changes to keep it, or discard to return to the previous model.</value></data>
+  <data name="HealthModelExportError" xml:space="preserve"><value>The model could not be downloaded. The saved model has not changed.</value></data>
+  <data name="HealthModelInvalidTopology" xml:space="preserve"><value>This AppHost cannot be represented as a health-model hierarchy. Check for cyclic or duplicate dependencies. The Resources graph can still show the reference graph.</value></data>
+  <data name="HealthModelSubscriptionError" xml:space="preserve"><value>Resource updates stopped. Reload the page to reconnect; the displayed health may be stale.</value></data>
+  <data name="HealthModelReadOnly" xml:space="preserve"><value>This is a historical run. Switch to the live run to edit the model.</value></data>
+  <data name="HealthModelCloudBoundary" xml:space="preserve"><value>Local health checks only. Timeline history, Azure signal queries, alerts, discovery and automatic Azure provisioning are not included in this preview.</value></data>
+  <data name="HealthModelDefinitionHint" xml:space="preserve"><value>The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. It is not a deployment template; an Azure publisher must bind resources and signals before provisioning. Azure layout and evaluation parity have not yet been validated.</value></data>
+  <data name="HealthModelEntityCount" xml:space="preserve"><value>{0} entities, {1} relationships</value><comment>{0} is an entity count, {1} is a relationship count.</comment></data>
+  <data name="HealthModelHealthy" xml:space="preserve"><value>Healthy</value></data>
+  <data name="HealthModelDegraded" xml:space="preserve"><value>Degraded</value></data>
+  <data name="HealthModelUnhealthy" xml:space="preserve"><value>Unhealthy</value></data>
+  <data name="HealthModelUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="HealthModelAllStates" xml:space="preserve"><value>All health states</value></data>
+  <data name="HealthModelNoMatch" xml:space="preserve"><value>No entities match the current filter.</value></data>
+  <data name="HealthModelDisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="HealthModelEntityId" xml:space="preserve"><value>Entity ID</value></data>
+  <data name="HealthModelPositionX" xml:space="preserve"><value>Canvas X</value></data>
+  <data name="HealthModelPositionY" xml:space="preserve"><value>Canvas Y</value></data>
+  <data name="HealthModelHealthObjective" xml:space="preserve"><value>Health objective (%)</value></data>
+  <data name="HealthModelObjectiveHint" xml:space="preserve"><value>Target percentage of healthy time. Stored for deployment; local availability history is not measured.</value></data>
+  <data name="HealthModelImpactStandard" xml:space="preserve"><value>Standard</value></data>
+  <data name="HealthModelImpactLimited" xml:space="preserve"><value>Limited</value></data>
+  <data name="HealthModelImpactSuppressed" xml:space="preserve"><value>Suppressed</value></data>
+  <data name="HealthModelImpactHint" xml:space="preserve"><value>Standard propagates health unchanged. Limited converts Unhealthy to Degraded and Degraded to Healthy. Suppressed does not affect parents.</value></data>
+  <data name="HealthModelMinimumHealthy" xml:space="preserve"><value>Minimum healthy</value></data>
+  <data name="HealthModelMaximumNotHealthy" xml:space="preserve"><value>Maximum not healthy</value></data>
+  <data name="HealthModelAbsolute" xml:space="preserve"><value>Entity count</value></data>
+  <data name="HealthModelPercentage" xml:space="preserve"><value>Percentage</value></data>
+  <data name="HealthModelThresholdUnit" xml:space="preserve"><value>Threshold unit</value></data>
+  <data name="HealthModelDegradedThreshold" xml:space="preserve"><value>Degraded threshold (optional)</value></data>
+  <data name="HealthModelUnhealthyThreshold" xml:space="preserve"><value>Unhealthy threshold</value></data>
+  <data name="HealthModelIgnoreUnknown" xml:space="preserve"><value>Ignore unknown dependencies</value></data>
+  <data name="HealthModelThresholdHint" xml:space="preserve"><value>Minimum healthy breaches at or below the threshold. Maximum not healthy breaches at or above it. Unhealthy takes precedence.</value></data>
+  <data name="HealthModelApply" xml:space="preserve"><value>Apply to draft</value></data>
+  <data name="HealthModelInvalidSettings" xml:space="preserve"><value>Check the name, coordinates and health settings. Use a 0-100 health objective, valid thresholds, and a more severe unhealthy threshold than the degraded threshold.</value></data>
+  <data name="HealthModelParents" xml:space="preserve"><value>Parents</value></data>
+  <data name="HealthModelSignalsSource" xml:space="preserve"><value>Signals reported by the local AppHost</value></data>
+  <data name="HealthModelPropagation" xml:space="preserve"><value>Health seen by parents</value></data>
+  <data name="HealthModelCanvasLabel" xml:space="preserve"><value>Application health model. Select an entity to inspect it.</value></data>
+  <data name="HealthModelRelationshipLabel" xml:space="preserve"><value>{0} depends on {1}: {2}</value><comment>Parent entity name, child entity name and health state.</comment></data>
+  <data name="HealthModelNodeLabel" xml:space="preserve"><value>{0}: {1}. {2} signals.</value><comment>Entity display name, health state and signal count.</comment></data>
+  <data name="HealthModelFocusDesigner" xml:space="preserve"><value>Select an entity to edit its propagation settings and canvas position.</value></data>
 </root>

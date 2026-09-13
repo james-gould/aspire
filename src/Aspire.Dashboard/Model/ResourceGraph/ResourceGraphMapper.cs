@@ -80,6 +80,7 @@ public static class ResourceGraphMapper
         return new ResourceDto
         {
             Name = AppHostEntityName,
+            IsAppHost = true,
             ResourceType = ControlsStrings.ResourceGraphAppHostType,
             DisplayName = applicationName,
             Uid = AppHostEntityName,

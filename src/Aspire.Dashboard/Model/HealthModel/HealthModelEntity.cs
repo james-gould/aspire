@@ -10,9 +10,10 @@ namespace Aspire.Dashboard.Model.HealthModel;
 /// component, a user flow, or a team.
 /// </summary>
 /// <remarks>
-/// Mirrors <c>Microsoft.CloudHealth/healthmodels/entities</c>. Azure has no entity kind discriminator, so
-/// whether an entity represents a resource is determined structurally by whether <see cref="ResourceName"/>
-/// is set. On translation that becomes the presence of an <c>azureResource</c> signal group.
+/// Uses the common configuration concepts of <c>Microsoft.CloudHealth/healthmodels/entities</c>.
+/// <see cref="ResourceName"/> identifies a local resource, not an ARM resource ID. A future publisher
+/// must supply a deployed resource binding and signal source rather than copying the local name into
+/// an Azure resource signal group.
 /// </remarks>
 public sealed record HealthModelEntity
 {
@@ -46,6 +47,15 @@ public sealed record HealthModelEntity
 
     /// <summary>The name of the Aspire resource this entity was projected from, when it represents one.</summary>
     public string? ResourceName { get; init; }
+
+    /// <summary>The stable local key used to associate designer settings with a resource replica.</summary>
+    public string? ResourceKey { get; init; }
+
+    /// <summary>The AppHost resource name, without the runtime-generated instance suffix.</summary>
+    public string? AspireResourceName { get; init; }
+
+    /// <summary>The replica index of the bound AppHost resource.</summary>
+    public int? ReplicaIndex { get; init; }
 
     /// <summary>The type of the Aspire resource this entity was projected from, such as <c>Project</c>.</summary>
     public string? ResourceType { get; init; }
@@ -84,7 +94,8 @@ public sealed record HealthModelRelationship(string ParentEntityName, string Chi
 /// through. Both arrive with deployment information rather than from the running app host.
 /// </para>
 /// <para>
-/// Target the <c>2026-05-01-preview</c> API version, which is the newest version with generated Bicep types.
+/// The initial documented publishing target is the <c>2026-05-01-preview</c> API version.
+/// Azure coordinate mapping and execution parity require service-level validation.
 /// See https://learn.microsoft.com/azure/azure-monitor/health-models/tutorial-bicep.
 /// </para>
 /// </remarks>

@@ -8,23 +8,17 @@ const SIBLING_SPACING = 210;
 
 let resourceGraph = null;
 
-export function initializeResourcesGraph(resourcesInterop, graphIcons) {
-    resourceGraph = new ResourceGraph(resourcesInterop, graphIcons);
+export function initializeResourcesGraph(resourcesInterop, graphIcons, instanceId) {
+    resourceGraph?.dispose();
+    resourceGraph = new ResourceGraph(resourcesInterop, graphIcons, instanceId);
     resourceGraph.resize();
+}
 
-    const observer = new ResizeObserver(function () {
-        resourceGraph.resize();
-    });
-
-    // The graph container is what actually bounds the drawing area, but it starts hidden while another tab
-    // is selected, so the summary layout is observed too to catch the switch back to the graph.
-    const graphContainer = document.querySelector('.resource-graph-container');
-    if (graphContainer) {
-        observer.observe(graphContainer);
-    }
-
-    for (const child of document.getElementsByClassName('resources-summary-layout')) {
-        observer.observe(child);
+export function disposeResourcesGraph(instanceId) {
+    // An old Blazor page can finish disposing after the replacement page has initialized its graph.
+    if (resourceGraph?.instanceId === instanceId) {
+        resourceGraph.dispose();
+        resourceGraph = null;
     }
 }
 
@@ -40,8 +34,15 @@ export function updateResourcesGraphSelected(resourceName) {
     }
 }
 
+export function focusResourceMenuItem(instanceId, itemId, anchorId) {
+    return resourceGraph?.instanceId === instanceId
+        ? resourceGraph.focusMenuItem(itemId, anchorId)
+        : Promise.resolve(false);
+}
+
 class ResourceGraph {
-    constructor(resourcesInterop, graphIcons) {
+    constructor(resourcesInterop, graphIcons, instanceId) {
+        this.instanceId = instanceId;
         this.resources = [];
         this.resourcesInterop = resourcesInterop;
         this.openContextMenu = false;
@@ -53,11 +54,12 @@ class ResourceGraph {
         this.links = [];
 
         this.svg = d3.select('.resource-graph');
+        this.container = this.svg.node().closest('.resource-graph-container');
         this.baseGroup = this.svg.append("g");
 
-        // Set while a node is being dragged. Collision is skipped for that node so it can be moved freely
-        // over the top of others instead of being shouldered away by them.
         this.draggingNodeId = null;
+        this.activeDrag = null;
+        this.dragMoved = false;
 
         // The view is auto-fitted to the graph until the user zooms or pans, after which their framing is
         // left alone.
@@ -88,71 +90,49 @@ class ResourceGraph {
             .forceSimulation()
             .force('link', this.linkForce)
             .force('charge', d3.forceManyBody().strength(-900).distanceMax(700))
-            .force("collide", d3.forceCollide((node) => {
-                // A node being dragged has no collision radius, so it slides over its neighbours instead of
-                // pushing them around. Everything else keeps a radius, which is what stops nodes from
-                // sitting on top of each other once the graph is static again.
-                return node.id === this.draggingNodeId ? 0 : NODE_COLLIDE_RADIUS;
-            }).iterations(4))
+            .force("collide", d3.forceCollide(NODE_COLLIDE_RADIUS).iterations(4))
             // These two are what turn a floating force layout into a hierarchy. Y is pinned hard to the
             // node's depth so every generation forms a row, while X only nudges each node toward the slot
             // computed for it so collision can still spread crowded rows out.
             .force("y", d3.forceY((node) => node.targetY || 0).strength(1))
             .force("x", d3.forceX((node) => node.targetX || 0).strength(0.25));
 
-        // Drag start is trigger on mousedown from click.
-        // Only change the state of the simulation when the drag event is triggered.
-        var dragActive = false;
-        var dragged = false;
-        this.dragDrop = d3.drag().on('start', (event) => {
-            dragActive = event.active;
-            dragged = false;
-
-            // Reset defensively. If a previous gesture never delivered its end event (the browser losing
-            // focus mid-drag will do this) the node would otherwise stay excluded from collision forever.
-            this.draggingNodeId = null;
-
-            event.subject.fx = event.subject.x;
-            event.subject.fy = event.subject.y;
-        }).on('drag', (event) => {
-            if (!dragActive) {
-                this.simulation.alphaTarget(0.1).restart();
-                dragActive = true;
-            }
-            if (!dragged) {
-                dragged = true;
-
-                // Drop the node out of collision for the duration of the drag so it can be moved anywhere,
-                // including straight over other nodes, rather than being blocked by whatever is nearby.
+        this.dragDrop = d3.drag()
+            .filter(event => !event.ctrlKey && !event.button && this.activeDrag === null)
+            .clickDistance(3)
+            .on('start', (event) => {
+                this.activeDrag = event.subject;
                 this.draggingNodeId = event.subject.id;
-            }
-            event.subject.fx = event.x;
-            event.subject.fy = event.y;
-        }).on('end', (event) => {
-            if (dragged) {
-                this.simulation.alphaTarget(0);
-                dragged = false;
-                this.draggingNodeId = null;
-
-                // Keep fx/fy so the node stays where it was dropped instead of springing back to wherever
-                // the simulation wants it. Double clicking the node releases it again.
-                event.subject.pinned = true;
-
-                // Collision can't move a node that is fixed in place, so anything else already pinned on
-                // this spot would stay overlapped forever. Release those back to the simulation and let it
-                // push them clear, which keeps the most recent drop as the one that wins.
-                this.releasePinnedNodesOverlapping(event.subject);
-
-                this.updateNodePinnedState();
-                this.simulation.alpha(0.4).restart();
-            }
-            else {
-                // Mousedown without movement is a click, not a drag, so release the temporary fixing applied
-                // on start. Pinning here would make every click on a node pin it.
-                if (!event.subject.pinned) {
-                    event.subject.fx = null;
-                    event.subject.fy = null;
+                this.dragMoved = false;
+                this.simulation.stop();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            })
+            .on('drag', (event) => {
+                if (this.activeDrag !== event.subject) {
+                    return;
                 }
+
+                // Move directly under the pointer with physics paused. D3 caches collision radii, and
+                // even a zero-radius node still collides with its neighbours' nonzero radii.
+                if (!this.dragMoved) {
+                    // Reparenting on mousedown also suppresses ordinary click events in browsers.
+                    this.nodeElements.filter(node => node === event.subject).raise();
+                }
+                this.dragMoved = true;
+                this.userAdjustedView = true;
+                event.subject.x = event.subject.fx = event.x;
+                event.subject.y = event.subject.fy = event.y;
+                event.subject.vx = event.subject.vy = 0;
+                this.onTick();
+            })
+            .on('end', () => this.finishDrag());
+
+        d3.select(window).on('blur.resource-graph', () => {
+            if (this.activeDrag) {
+                d3.select(window).on('.drag', null);
+                d3.dragEnable(window, true);
+                this.finishDrag();
             }
         });
 
@@ -213,8 +193,85 @@ class ResourceGraph {
 
         this.linkElementsG = this.baseGroup.append("g").attr("class", "links");
         this.nodeElementsG = this.baseGroup.append("g").attr("class", "nodes");
+        this.linkElements = this.linkElementsG.selectAll("line");
+        this.nodeElements = this.nodeElementsG.selectAll(".resource-group");
 
         this.initializeButtons();
+        this.resizeObserver = new ResizeObserver(() => this.resize());
+        this.resizeObserver.observe(this.container);
+    }
+
+    dispose() {
+        this.cancelMenuFocus?.();
+        this.simulation.stop();
+        this.resizeObserver.disconnect();
+        if (this.activeDrag) {
+            d3.select(window).on('.drag', null);
+            d3.dragEnable(window, true);
+        }
+        d3.select(window).on('blur.resource-graph', null);
+        this.svg.interrupt().on('.zoom', null);
+        this.svg.selectAll('*').interrupt().remove();
+        d3.select(this.container).selectAll('.graph-zoom-in, .graph-zoom-out, .graph-reset').on('click', null);
+    }
+
+    focusMenuItem(itemId, anchorId) {
+        this.cancelMenuFocus?.();
+        return new Promise(resolve => {
+            const complete = focused => {
+                observer.disconnect();
+                clearTimeout(timeout);
+                this.cancelMenuFocus = null;
+                resolve(focused);
+            };
+            const tryFocus = () => {
+                const item = document.getElementById(itemId);
+                const anchor = document.getElementById(anchorId);
+                // Fluent renders popup items separately and assigns tabindex when its web components
+                // are ready. Its anchor's aria-expanded also signals keyboard-listener initialization.
+                if (anchor?.getAttribute('aria-expanded') === 'true' &&
+                    item?.hasAttribute('tabindex') && item.getClientRects().length > 0) {
+                    item.focus();
+                    if (document.activeElement === item || item.contains(document.activeElement)) {
+                        complete(true);
+                    }
+                }
+            };
+            const observer = new MutationObserver(tryFocus);
+            const timeout = setTimeout(() => complete(false), 5000);
+            this.cancelMenuFocus = () => complete(false);
+            observer.observe(document.body, {
+                subtree: true,
+                childList: true,
+                attributes: true,
+                attributeFilter: ['aria-expanded', 'tabindex', 'hidden', 'style', 'class']
+            });
+            tryFocus();
+        });
+    }
+
+    finishDrag() {
+        const node = this.activeDrag;
+        if (!node) {
+            return;
+        }
+
+        this.activeDrag = null;
+        this.draggingNodeId = null;
+        if (this.nodes.includes(node)) {
+            if (this.dragMoved) {
+                node.pinned = true;
+                this.releasePinnedNodesOverlapping(node);
+            } else if (!node.pinned) {
+                node.fx = node.fy = null;
+            }
+        }
+
+        this.updateNodePinnedState();
+        if (this.dragMoved) {
+            this.simulation.alpha(0.4);
+        }
+        this.simulation.alphaTarget(0).restart();
     }
 
     initializeButtons() {
@@ -224,25 +281,30 @@ class ResourceGraph {
     }
 
     resetZoomAndPan() {
-        this.svg.transition().call(this.zoom.transform, d3.zoomIdentity);
+        this.svg.interrupt();
+        this.simulation.stop();
+        this.userAdjustedView = false;
         this.unpinAllNodes();
+        this.computeHierarchy();
+        for (const node of this.nodes) {
+            node.x = node.targetX;
+            node.y = node.targetY;
+            node.vx = node.vy = 0;
+        }
+        this.simulation.nodes(this.nodes).alphaTarget(0).alpha(1);
+        this.simulation.tick(300);
+        this.onTick();
+        this.fitToView();
     }
 
     // Releases every pinned node so the layout is driven by the simulation again.
-    unpinAllNodes() {        var hasPinnedNodes = false;
+    unpinAllNodes() {
         for (const node of this.nodes) {
-            if (node.pinned) {
-                node.pinned = false;
-                node.fx = null;
-                node.fy = null;
-                hasPinnedNodes = true;
-            }
+            node.pinned = false;
+            node.fx = null;
+            node.fy = null;
         }
-
-        if (hasPinnedNodes) {
-            this.updateNodePinnedState();
-            this.simulation.alpha(0.3).restart();
-        }
+        this.updateNodePinnedState();
     }
 
     // Reflects the pinned state of each node in the DOM so it can be styled.
@@ -403,37 +465,34 @@ class ResourceGraph {
             return;
         }
 
-        const container = document.querySelector(".resource-graph-container");
-        if (!container || container.clientWidth === 0) {
+        const container = this.container;
+        if (container.clientWidth === 0 || container.clientHeight === 0) {
             return;
         }
 
-        const padding = NODE_COLLIDE_RADIUS;
-        const xs = this.nodes.map(n => n.x || 0);
-        const ys = this.nodes.map(n => n.y || 0);
-        const minX = Math.min(...xs) - padding;
-        const maxX = Math.max(...xs) + padding;
-        const minY = Math.min(...ys) - padding;
-        const maxY = Math.max(...ys) + padding;
-
-        const width = Math.max(maxX - minX, 1);
-        const height = Math.max(maxY - minY, 1);
+        // Include labels and selected-node scaling, not just the circle centres.
+        const bounds = this.nodeElementsG.node().getBBox();
+        const padding = 32;
+        const width = Math.max(bounds.width + padding * 2, 1);
+        const height = Math.max(bounds.height + padding * 2, 1);
 
         // Never scale up past 1. A small graph should sit at natural size in the middle rather than being
         // blown up to fill the panel.
         const scale = Math.min(1, container.clientWidth / width, container.clientHeight / height);
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = bounds.y + bounds.height / 2;
 
         const transform = d3.zoomIdentity.scale(scale).translate(-centerX, -centerY);
         this.svg.call(this.zoom.transform, transform);
     }
 
     zoomIn() {
+        this.userAdjustedView = true;
         this.svg.transition().call(this.zoom.scaleBy, 1.5);
     }
 
     zoomOut() {
+        this.userAdjustedView = true;
         this.svg.transition().call(this.zoom.scaleBy, 2 / 3);
     }
 
@@ -455,7 +514,7 @@ class ResourceGraph {
     resize() {
         // Measure the graph container rather than the whole summary panel. The panel also contains the tabs
         // row, so measuring it made the drawing area taller than the space the graph actually occupies.
-        var container = document.querySelector(".resource-graph-container");
+        var container = this.container;
         if (container && container.clientWidth > 0 && container.clientHeight > 0) {
             var width = container.clientWidth;
             var height = container.clientHeight;
@@ -521,7 +580,7 @@ class ResourceGraph {
     }
 
     updateNodes(newResources) {
-        const existingNodes = this.nodes || []; // Ensure nodes is initialized
+        const existingNodes = new Map(this.nodes.map(node => [node.id, node]));
         const updatedNodes = [];
 
         // calculate degree (number of connections) for each resource
@@ -539,35 +598,22 @@ class ResourceGraph {
         });
 
         newResources.forEach(resource => {
-            const existingNode = existingNodes.find(node => node.id === resource.name);
+            const node = existingNodes.get(resource.name) || { id: resource.name };
             const degree = degreeMap.get(resource.name) || 1;
 
-            if (existingNode) {
-                // Spreading the existing node preserves simulation state, including the fx/fy of a node the
-                // user has pinned by dragging it.
-                updatedNodes.push({
-                    ...existingNode,
-                    label: resource.displayName,
-                    endpointUrl: resource.endpointUrl,
-                    endpointText: resource.endpointText,
-                    resourceIcon: createIcon(resource.resourceIcon),
-                    stateIcon: createIcon(resource.stateIcon),
-                    healthState: resource.healthState,
-                    degree: degree
-                });
-            } else {
-                // Add new resource
-                updatedNodes.push({
-                    id: resource.name,
-                    label: resource.displayName,
-                    endpointUrl: resource.endpointUrl,
-                    endpointText: resource.endpointText,
-                    resourceIcon: createIcon(resource.resourceIcon),
-                    stateIcon: createIcon(resource.stateIcon),
-                    healthState: resource.healthState,
-                    degree: degree
-                });
-            }
+            // D3 retains this object as the subject for the entire gesture. Replacing it on a health
+            // update disconnects an active drag from the rendered node and loses the pin on mouse-up.
+            Object.assign(node, {
+                label: resource.displayName,
+                endpointUrl: resource.endpointUrl,
+                endpointText: resource.endpointText,
+                resourceIcon: createIcon(resource.resourceIcon),
+                stateIcon: createIcon(resource.stateIcon),
+                healthState: resource.healthState,
+                isAppHost: resource.isAppHost,
+                degree: degree
+            });
+            updatedNodes.push(node);
         });
 
         this.nodes = updatedNodes;
@@ -596,11 +642,11 @@ class ResourceGraph {
 
             var resourceLinks = resource.childNames
                 .filter((childName) => {
-                    return newResources.some(r => r.name === childName);
+                    return healthStateByName.has(childName);
                 })
-                .map((childName, index) => {
+                .map((childName) => {
                     return {
-                        id: `${resource.name}-${childName}`,
+                        id: JSON.stringify([resource.name, childName]),
                         target: childName,
                         source: resource.name,
                         // The link takes the child's rolled up state. Because the child's state already
@@ -727,6 +773,7 @@ class ResourceGraph {
         // hovered (see .resource-menu-cog CSS); it makes the node's interactivity discoverable by opening
         // the same context menu as right-clicking the node.
         var cogGroup = newNodesContainer
+            .filter(n => !n.isAppHost)
             .append("g")
             .attr("class", "resource-menu-cog")
             .attr("id", n => `resource-menu-cog-${n.id}`)
@@ -776,6 +823,8 @@ class ResourceGraph {
         this.nodeElementsG
             .selectAll(".resource-group")
             .attr("data-health", n => n.healthState);
+        this.nodeElements.select(".resource-name text").text(n => trimText(n.label, 30));
+        this.nodeElements.select(".resource-name title").text(n => n.label);
         this.nodeElementsG
             .selectAll(".resource-group")
             .select(".resource-menu-cog")
@@ -838,6 +887,11 @@ class ResourceGraph {
             .on('tick', this.onTick);
 
         this.simulation.force("link").links(this.links);
+        if (this.activeDrag) {
+            this.simulation.stop();
+            this.onTick();
+            return;
+        }
         if (hasStructureChanged) {
             this.simulation.stop();
 
@@ -909,6 +963,9 @@ class ResourceGraph {
 
         // Prevent default browser context menu.
         event.preventDefault();
+        if (data.isAppHost) {
+            return;
+        }
 
         await this.openResourceContextMenu(data.id, event.clientX, event.clientY, null, null);
     };
@@ -951,6 +1008,7 @@ class ResourceGraph {
             // Wait for method completion. It completes when the context menu is closed.
             await this.resourcesInterop.invokeMethodAsync('ResourceContextMenu', id, window.innerWidth, window.innerHeight, clientX, clientY, focusElementId);
         } finally {
+            this.cancelMenuFocus?.();
             this.openContextMenu = false;
             trigger?.setAttribute("aria-expanded", "false");
 
@@ -961,6 +1019,9 @@ class ResourceGraph {
 
     selectNode = (event) => {
         var data = event.target.__data__;
+        if (data.isAppHost) {
+            return;
+        }
 
         // Always send the clicked on resource to the server. It will clear the selection if the same resource is clicked again.
         this.resourcesInterop.invokeMethodAsync('SelectResource', data.id);
@@ -976,7 +1037,7 @@ class ResourceGraph {
             changeScale(this, data.id, 1.2);
         }
 
-        this.selectedNode = data;
+        this.selectedNode = clearSelection ? null : data;
 
         function changeScale(self, id, scale) {
             let match = self.nodeElementsG
@@ -1005,9 +1066,6 @@ class ResourceGraph {
 
     // Releases a node pinned by dragging so the simulation can lay it out again.
     unpinNode = (event) => {
-        // Child elements keep the datum they were appended with, and updateNodes replaces node objects on
-        // every refresh, so the datum reachable from the event can be a stale copy. Only the id is stable,
-        // so the live node is looked up from the simulation's own array.
         var id = event.target.__data__?.id;
         var node = id ? this.nodes.find(n => n.id === id) : null;
         if (!node || !node.pinned) {

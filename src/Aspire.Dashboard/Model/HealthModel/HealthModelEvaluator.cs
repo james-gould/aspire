@@ -29,93 +29,51 @@ public static class HealthModelEvaluator
             return new HealthModelSnapshot { Definition = definition, Root = null, AllNodes = [] };
         }
 
-        var entitiesByName = definition.Entities.ToDictionary(e => e.Name, StringComparer.Ordinal);
-
-        var childNamesByParent = definition.Relationships
-            .GroupBy(r => r.ParentEntityName, StringComparer.Ordinal)
-            .ToDictionary(g => g.Key, g => g.Select(r => r.ChildEntityName).ToArray(), StringComparer.Ordinal);
-
-        // The root is the entity named after the model, matching the Azure convention where the root entity
-        // is created automatically using the health model's own name. Fall back to any entity that is never
-        // a child so a hand-built model without that convention still renders.
-        var root = entitiesByName.TryGetValue(definition.Name, out var namedRoot)
-            ? namedRoot
-            : FindImplicitRoot(definition);
-
-        if (root is null)
+        var topology = HealthModelTopology.Create(definition);
+        var nodes = new Dictionary<string, HealthModelNode>(StringComparer.Ordinal);
+        // Evaluate each entity once, from leaves up. Shared dependencies must not produce duplicate
+        // rows (or duplicate DOM keys) when the same entity is reached through several parents.
+        foreach (var entity in topology.Order.Reverse())
         {
-            return new HealthModelSnapshot { Definition = definition, Root = null, AllNodes = [] };
-        }
-
-        var allNodes = ImmutableArray.CreateBuilder<HealthModelNode>();
-
-        // Entities can legitimately have multiple parents, so an entity may be visited more than once.
-        // The visiting set only guards against cycles on the current path, which would otherwise recurse forever.
-        var visiting = new HashSet<string>(StringComparer.Ordinal);
-        var rootNode = EvaluateEntity(root, depth: 0);
-
-        return new HealthModelSnapshot
-        {
-            Definition = definition,
-            Root = rootNode,
-            AllNodes = allNodes.ToImmutable()
-        };
-
-        HealthModelNode EvaluateEntity(HealthModelEntity entity, int depth)
-        {
-            // Reserve this node's slot before recursing so children are appended after their parent and the
-            // flattened list comes out in depth-first render order.
-            var nodeIndex = allNodes.Count;
-            allNodes.Add(null!);
-
-            var children = ImmutableArray<HealthModelNode>.Empty;
-
-            if (childNamesByParent.TryGetValue(entity.Name, out var childNames) && visiting.Add(entity.Name))
-            {
-                try
-                {
-                    var builder = ImmutableArray.CreateBuilder<HealthModelNode>(childNames.Length);
-                    foreach (var childName in childNames)
-                    {
-                        if (entitiesByName.TryGetValue(childName, out var child) && !visiting.Contains(childName))
-                        {
-                            builder.Add(EvaluateEntity(child, depth + 1));
-                        }
-                    }
-
-                    children = builder.ToImmutable();
-                }
-                finally
-                {
-                    visiting.Remove(entity.Name);
-                }
-            }
-
-            var signalsState = entity.Signals.Length == 0
-                ? HealthState.Unknown
-                : HealthStateExtensions.WorstOf(entity.Signals.Select(s => s.State));
-
+            var children = topology.Children[entity.Name].Select(n => nodes[n]).ToImmutableArray();
+            var signalsState = HealthStateExtensions.WorstOf(entity.Signals.Select(s => s.State));
             HealthState? dependenciesState = children.Length == 0
                 ? null
                 : AggregateDependencies(entity.Dependencies, children);
-
-            // Unknown is the least severe state, so an entity with no signals simply inherits its dependency
-            // state and an entity with no children is driven entirely by its own signals. No special casing needed.
             var state = HealthStateExtensions.WorstOf(signalsState, dependenciesState ?? HealthState.Unknown);
 
-            var node = new HealthModelNode
+            nodes.Add(entity.Name, new HealthModelNode
             {
                 Entity = entity,
                 State = state,
                 SignalsState = signalsState,
                 DependenciesState = dependenciesState,
                 Children = children,
-                Depth = depth
-            };
-
-            allNodes[nodeIndex] = node;
-            return node;
+                Depth = topology.Depth[entity.Name]
+            });
         }
+
+        var root = nodes.GetValueOrDefault(definition.Name) ?? nodes[topology.Order[0].Name];
+        var allNodes = ImmutableArray.CreateBuilder<HealthModelNode>();
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Stack<HealthModelNode>([root]);
+        while (pending.TryPop(out var node))
+        {
+            if (visited.Add(node.Name))
+            {
+                allNodes.Add(node);
+                foreach (var child in node.Children.Reverse())
+                {
+                    pending.Push(child);
+                }
+            }
+        }
+        foreach (var entity in topology.Order.Where(e => !visited.Contains(e.Name)))
+        {
+            allNodes.Add(nodes[entity.Name]);
+        }
+
+        return new HealthModelSnapshot { Definition = definition, Root = root, AllNodes = allNodes.ToImmutable() };
     }
 
     /// <summary>
@@ -174,20 +132,4 @@ public static class HealthModelEvaluator
         };
     }
 
-    private static HealthModelEntity? FindImplicitRoot(HealthModelDefinition definition)
-    {
-        var childNames = definition.Relationships.Select(r => r.ChildEntityName).ToHashSet(StringComparer.Ordinal);
-
-        foreach (var entity in definition.Entities)
-        {
-            if (!childNames.Contains(entity.Name))
-            {
-                return entity;
-            }
-        }
-
-        // Every entity is a child of something, which means the model is a cycle. Fall back to the first
-        // entity so the UI still renders something rather than failing.
-        return definition.Entities.Length > 0 ? definition.Entities[0] : null;
-    }
 }

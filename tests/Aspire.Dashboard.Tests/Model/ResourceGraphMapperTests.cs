@@ -207,6 +207,8 @@ public class ResourceGraphMapperTests
 
         var appHost = dtos[0];
         Assert.Equal(ResourceGraphMapper.AppHostEntityName, appHost.Name);
+        Assert.True(appHost.IsAppHost);
+        Assert.All(dtos.Skip(1), dto => Assert.False(dto.IsAppHost));
         Assert.Equal("TestApp", appHost.DisplayName);
         Assert.Collection(appHost.ChildNames,
             n => Assert.Equal("api", n),

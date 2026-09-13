@@ -3,9 +3,55 @@
 @using Aspire.Dashboard.Resources
 @using Aspire.Dashboard.Utils
 
-@inject IStringLocalizer<Dashboard.Resources.HealthModel> Loc
-
 <div class="health-model-details-layout">
+    @if (Editable && Configuration is not null)
+    {
+        <div class="health-model-entity-editor">
+            <h3>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDesignerTab)]</h3>
+            <FluentTextField Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDisplayName)]"
+                             @bind-Value="_displayName" Maxlength="260" />
+            <div class="health-model-coordinate-fields">
+                <FluentNumberField TValue="double" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionX)]" @bind-Value="_x" Step="8" />
+                <FluentNumberField TValue="double" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionY)]" @bind-Value="_y" Step="8" />
+            </div>
+            <FluentSelect TOption="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyImpact)]"
+                          @bind-Value="_impact" Disabled="@(Node.Entity.ResourceName is null)">
+                @foreach (var impact in Enum.GetValues<EntityImpact>())
+                {
+                    <FluentOption Value="@impact.ToString()">@HealthModelLabels.Impact(impact, Loc)</FluentOption>
+                }
+            </FluentSelect>
+            <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelImpactHint)]</p>
+            @if (Node.Children.Length > 0)
+            {
+                <FluentSelect TOption="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyRollup)]" @bind-Value="_aggregation">
+                    @foreach (var aggregation in Enum.GetValues<DependenciesAggregationType>())
+                    {
+                        <FluentOption Value="@aggregation.ToString()">@HealthModelLabels.Aggregation(aggregation, Loc)</FluentOption>
+                    }
+                </FluentSelect>
+                @if (_aggregation != nameof(DependenciesAggregationType.WorstOf))
+                {
+                    <FluentSelect TOption="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelThresholdUnit)]" @bind-Value="_unit">
+                        <FluentOption Value="@nameof(AggregationUnit.Absolute)">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelAbsolute)]</FluentOption>
+                        <FluentOption Value="@nameof(AggregationUnit.Percentage)">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPercentage)]</FluentOption>
+                    </FluentSelect>
+                    <FluentNumberField TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDegradedThreshold)]" @bind-Value="_degraded" Min="0" Step="1" />
+                    <FluentNumberField TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelUnhealthyThreshold)]" @bind-Value="_unhealthy" Min="0" Step="1" />
+                    <FluentCheckbox @bind-Value="_ignoreUnknown" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelIgnoreUnknown)]" />
+                    <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelThresholdHint)]</p>
+                }
+            }
+            <FluentNumberField TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHealthObjective)]"
+                               @bind-Value="_objective" Min="0" Max="100" Step="0.1" />
+            <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelObjectiveHint)]</p>
+            @if (_validationError)
+            {
+                <p role="alert" class="health-model-settings-error">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelInvalidSettings)]</p>
+            }
+            <FluentButton Appearance="Appearance.Accent" OnClick="ApplyAsync">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelApply)]</FluentButton>
+        </div>
+    }
     <FluentAccordion>
         <FluentAccordionItem Heading="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelEntityColumnHeader)]" Expanded="true">
             <div class="health-model-property-list">
@@ -20,19 +66,19 @@
                             var (icon, color) = HealthModelIconHelpers.GetHealthStateIcon(Node.State);
                         }
                         <FluentIcon Value="@icon" Color="@color" />
-                        @Node.State.ToString()
+                        @HealthModelLabels.State(Node.State, Loc)
                     </span>
                 </div>
                 <div class="health-model-property">
                     <span class="health-model-property-name">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertySignalsState)]</span>
-                    <span class="health-model-property-value">@Node.SignalsState.ToString()</span>
+                    <span class="health-model-property-value">@HealthModelLabels.State(Node.SignalsState, Loc)</span>
                 </div>
                 <div class="health-model-property">
                     <span class="health-model-property-name">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyDependenciesState)]</span>
                     <span class="health-model-property-value">
                         @if (Node.DependenciesState is { } dependenciesState)
                         {
-                            @dependenciesState.ToString()
+                            @HealthModelLabels.State(dependenciesState, Loc)
                         }
                         else
                         {
@@ -42,11 +88,47 @@
                 </div>
                 <div class="health-model-property">
                     <span class="health-model-property-name">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyImpact)]</span>
-                    <span class="health-model-property-value">@Node.Entity.Impact.ToString()</span>
+                    <span class="health-model-property-value">@HealthModelLabels.Impact(Node.Entity.Impact, Loc)</span>
                 </div>
                 <div class="health-model-property">
                     <span class="health-model-property-name">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyRollup)]</span>
                     <span class="health-model-property-value">@RollupDescription</span>
+                </div>
+                @if (Node.Entity.Dependencies.AggregationType != DependenciesAggregationType.WorstOf)
+                {
+                    <div class="health-model-property">
+                        <span>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelUnhealthyThreshold)]</span>
+                        <span>@Node.Entity.Dependencies.UnhealthyThreshold?.ToString("0.##", CultureInfo.CurrentCulture) @ThresholdUnit</span>
+                    </div>
+                    @if (Node.Entity.Dependencies.DegradedThreshold is { } degraded)
+                    {
+                        <div class="health-model-property">
+                            <span>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDegradedThreshold)]</span>
+                            <span>@degraded.ToString("0.##", CultureInfo.CurrentCulture) @ThresholdUnit</span>
+                        </div>
+                    }
+                }
+                @if (Node.Entity.HealthObjective is { } objective)
+                {
+                    <div class="health-model-property">
+                        <span>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHealthObjective)]</span>
+                        <span>@objective.ToString("0.##", CultureInfo.CurrentCulture)</span>
+                    </div>
+                }
+                @if (Configuration is { } config)
+                {
+                    <div class="health-model-property">
+                        <span>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionX)] / @Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionY)]</span>
+                        <span>@config.CanvasPosition.X.ToString("0.##", CultureInfo.CurrentCulture) / @config.CanvasPosition.Y.ToString("0.##", CultureInfo.CurrentCulture)</span>
+                    </div>
+                }
+                <div class="health-model-property">
+                    <span class="health-model-property-name">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelEntityId)]</span>
+                    <code class="health-model-identity">@Node.Name</code>
+                </div>
+                <div class="health-model-property">
+                    <span class="health-model-property-name">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropagation)]</span>
+                    <span>@HealthModelLabels.State(Node.State.ApplyImpact(Node.Entity.Impact), Loc)</span>
                 </div>
                 @if (Node.Entity.ResourceName is { } resourceName)
                 {
@@ -70,6 +152,7 @@
             }
             else
             {
+                <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelSignalsSource)]</p>
                 <FluentDataGrid TGridItem="HealthModelSignal"
                                 Items="@_signals"
                                 ItemKey="@(s => s.Name)"
@@ -87,7 +170,7 @@
                             var (signalIcon, signalColor) = HealthModelIconHelpers.GetHealthStateIcon(context.State);
                         }
                         <FluentIcon Value="@signalIcon" Color="@signalColor" />
-                        @context.State.ToString()
+                        @HealthModelLabels.State(context.State, Loc)
                     </AspireTemplateColumn>
                     <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDetailsColumnHeader)]"
                                           Tooltip="true"
@@ -118,38 +201,30 @@
                     <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelEntityColumnHeader)]"
                                           Tooltip="true"
                                           TooltipText="@(n => n.DisplayName)">
-                        @context.DisplayName
+                        <button class="health-model-related-entity" type="button" @onclick="@(() => OnSelect.InvokeAsync(context.Name))">@context.DisplayName</button>
                     </AspireTemplateColumn>
                     <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHealthColumnHeader)]">
                         @{
                             var (childIcon, childColor) = HealthModelIconHelpers.GetHealthStateIcon(context.State);
                         }
                         <FluentIcon Value="@childIcon" Color="@childColor" />
-                        @context.State.ToString()
+                        @HealthModelLabels.State(context.State, Loc)
                     </AspireTemplateColumn>
                     <AspireTemplateColumn Title="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyImpact)]">
-                        @context.Entity.Impact.ToString()
+                        @HealthModelLabels.Impact(context.Entity.Impact, Loc)
                     </AspireTemplateColumn>
                 </FluentDataGrid>
             }
         </FluentAccordionItem>
     </FluentAccordion>
-</div>
-
-@code {
-    [Parameter, EditorRequired]
-    public required HealthModelNode Node { get; set; }
-
-    // See the note in HealthModel.razor.cs: FluentDataGrid cannot compose LINQ operators over a queryable
-    // built directly from an ImmutableArray, so the entries are materialized into lists first.
-    private IQueryable<HealthModelSignal> _signals = Enumerable.Empty<HealthModelSignal>().AsQueryable();
-    private IQueryable<HealthModelNode> _children = Enumerable.Empty<HealthModelNode>().AsQueryable();
-
-    private string RollupDescription => Pages.HealthModel.GetRollupDescription(Node.Entity.Dependencies, Loc);
-
-    protected override void OnParametersSet()
+    @if (Parents.Count > 0)
     {
-        _signals = Node.Entity.Signals.ToList().AsQueryable();
-        _children = Node.Children.ToList().AsQueryable();
+        <div class="health-model-parent-list">
+            <h3>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelParents)]</h3>
+            @foreach (var parent in Parents)
+            {
+                <button class="health-model-related-entity" type="button" @onclick="@(() => OnSelect.InvokeAsync(parent.Name))">@parent.DisplayName</button>
+            }
+        </div>
     }
-}
+</div>

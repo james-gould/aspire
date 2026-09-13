@@ -3,6 +3,15 @@
     overflow: auto;
 }
 
+.health-model-entity-editor { padding: 12px; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--neutral-stroke-divider-rest); }
+.health-model-entity-editor h3 { margin: 0; }
+.health-model-coordinate-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.health-model-editor-hint { font-size: 12px; color: var(--foreground-subtext-rest); margin: 0; white-space: normal; }
+.health-model-settings-error { color: var(--error); }
+.health-model-identity { overflow-wrap: anywhere; font-size: 11px; }
+.health-model-parent-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+::deep .health-model-related-entity { background: none; border: 0; color: var(--accent-foreground-rest); font: inherit; padding: 0; text-align: left; cursor: pointer; }
+
 ::deep .health-model-property-list {
     display: flex;
     flex-direction: column;

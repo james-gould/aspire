@@ -12,22 +12,16 @@ namespace Aspire.Dashboard.Tests.Model;
 public class AspireHealthModelBuilderTests
 {
     [Fact]
-    public void Build_NoResources_StillProducesLogicalEntities()
+    public void Build_NoResources_StillProducesAppHostRoot()
     {
         var definition = AspireHealthModelBuilder.Build([]);
 
-        Assert.Collection(definition.Entities,
-            e => Assert.Equal(AspireHealthModelBuilder.RootEntityName, e.Name),
-            e => Assert.Equal(AspireHealthModelBuilder.ServicesEntityName, e.Name),
-            e => Assert.Equal(AspireHealthModelBuilder.InfrastructureEntityName, e.Name));
-
-        Assert.Collection(definition.Relationships,
-            r => Assert.Equal(new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, AspireHealthModelBuilder.ServicesEntityName), r),
-            r => Assert.Equal(new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, AspireHealthModelBuilder.InfrastructureEntityName), r));
+        Assert.Equal(AspireHealthModelBuilder.RootEntityName, Assert.Single(definition.Entities).Name);
+        Assert.Empty(definition.Relationships);
     }
 
     [Fact]
-    public void Build_ProjectsAndContainers_AreGroupedUnderDifferentParents()
+    public void Build_IndependentResources_AreChildrenOfTheAppHost()
     {
         var project = ModelTestHelpers.CreateResource(resourceName: "api", resourceType: KnownResourceTypes.Project, state: KnownResourceState.Running);
         var container = ModelTestHelpers.CreateResource(resourceName: "cache", resourceType: KnownResourceTypes.Container, state: KnownResourceState.Running);
@@ -37,8 +31,9 @@ public class AspireHealthModelBuilderTests
         var projectEntityName = AspireHealthModelBuilder.GetEntityName(project);
         var containerEntityName = AspireHealthModelBuilder.GetEntityName(container);
 
-        Assert.Contains(new HealthModelRelationship(AspireHealthModelBuilder.ServicesEntityName, projectEntityName), definition.Relationships);
-        Assert.Contains(new HealthModelRelationship(AspireHealthModelBuilder.InfrastructureEntityName, containerEntityName), definition.Relationships);
+        Assert.Contains(new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, projectEntityName), definition.Relationships);
+        Assert.Contains(new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, containerEntityName), definition.Relationships);
+        Assert.All(definition.Entities, entity => Assert.Equal(EntityImpact.Standard, entity.Impact));
     }
 
     [Fact]
@@ -49,14 +44,11 @@ public class AspireHealthModelBuilderTests
 
         var definition = AspireHealthModelBuilder.Build([parameter, connectionString]);
 
-        Assert.Collection(definition.Entities,
-            e => Assert.Equal(AspireHealthModelBuilder.RootEntityName, e.Name),
-            e => Assert.Equal(AspireHealthModelBuilder.ServicesEntityName, e.Name),
-            e => Assert.Equal(AspireHealthModelBuilder.InfrastructureEntityName, e.Name));
+        Assert.Equal(AspireHealthModelBuilder.RootEntityName, Assert.Single(definition.Entities).Name);
     }
 
     [Fact]
-    public void Build_CustomResourceType_IsGroupedUnderServices()
+    public void Build_CustomResourceType_IsIncluded()
     {
         // Custom resource types can carry health checks, so they must appear in the model rather than being
         // dropped because they are not a known type.
@@ -65,19 +57,19 @@ public class AspireHealthModelBuilderTests
         var definition = AspireHealthModelBuilder.Build([custom]);
 
         Assert.Contains(
-            new HealthModelRelationship(AspireHealthModelBuilder.ServicesEntityName, AspireHealthModelBuilder.GetEntityName(custom)),
+            new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, AspireHealthModelBuilder.GetEntityName(custom)),
             definition.Relationships);
     }
 
     [Fact]
-    public void Build_ExternalService_IsGroupedUnderInfrastructure()
+    public void Build_ExternalService_IsIncluded()
     {
         var external = ModelTestHelpers.CreateResource(resourceName: "api-gateway", resourceType: KnownResourceTypes.ExternalService, state: KnownResourceState.Running);
 
         var definition = AspireHealthModelBuilder.Build([external]);
 
         Assert.Contains(
-            new HealthModelRelationship(AspireHealthModelBuilder.InfrastructureEntityName, AspireHealthModelBuilder.GetEntityName(external)),
+            new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, AspireHealthModelBuilder.GetEntityName(external)),
             definition.Relationships);
     }
 
@@ -88,10 +80,7 @@ public class AspireHealthModelBuilderTests
 
         var definition = AspireHealthModelBuilder.Build([hidden]);
 
-        Assert.Collection(definition.Entities,
-            e => Assert.Equal(AspireHealthModelBuilder.RootEntityName, e.Name),
-            e => Assert.Equal(AspireHealthModelBuilder.ServicesEntityName, e.Name),
-            e => Assert.Equal(AspireHealthModelBuilder.InfrastructureEntityName, e.Name));
+        Assert.Equal(AspireHealthModelBuilder.RootEntityName, Assert.Single(definition.Entities).Name);
     }
 
     [Fact]
@@ -172,19 +161,53 @@ public class AspireHealthModelBuilderTests
     }
 
     [Fact]
-    public void BuildAndEvaluate_UnhealthyContainer_DegradesApplicationRatherThanFailingIt()
+    public void BuildAndEvaluate_UnhealthyContainer_UsesStandardImpactUnlessConfigured()
     {
-        // The container group itself reports unhealthy, but infrastructure has limited impact so the
-        // application only sees degraded. This is the behaviour the sample model exists to demonstrate.
         var project = ModelTestHelpers.CreateResource(resourceName: "api", resourceType: KnownResourceTypes.Project, state: KnownResourceState.Running);
         var container = ModelTestHelpers.CreateResource(resourceName: "cache", resourceType: KnownResourceTypes.Container, state: KnownResourceState.FailedToStart);
 
         var snapshot = HealthModelEvaluator.Evaluate(AspireHealthModelBuilder.Build([project, container]));
 
-        Assert.Equal(HealthState.Degraded, snapshot.State);
+        Assert.Equal(HealthState.Unhealthy, snapshot.State);
+    }
 
-        var infrastructure = Assert.Single(snapshot.AllNodes, n => n.Name == AspireHealthModelBuilder.InfrastructureEntityName);
-        Assert.Equal(HealthState.Unhealthy, infrastructure.State);
+    [Fact]
+    public void Build_UsesTheAppHostDependencyChain_NotResourceTypeBuckets()
+    {
+        var api = ModelTestHelpers.CreateResource("api", state: KnownResourceState.Running,
+            relationships: [new("server", KnownRelationshipTypes.Reference)]);
+        var server = ModelTestHelpers.CreateResource("server", state: KnownResourceState.Running);
+        var database = ModelTestHelpers.CreateResource("database", state: KnownResourceState.Running,
+            relationships: [new("server", KnownRelationshipTypes.Parent)]);
+        var model = AspireHealthModelBuilder.Build([database, api, server]);
+        var expected = new[]
+        {
+            new HealthModelRelationship(AspireHealthModelBuilder.RootEntityName, AspireHealthModelBuilder.GetEntityName(api)),
+            new HealthModelRelationship(AspireHealthModelBuilder.GetEntityName(api), AspireHealthModelBuilder.GetEntityName(server)),
+            new HealthModelRelationship(AspireHealthModelBuilder.GetEntityName(server), AspireHealthModelBuilder.GetEntityName(database))
+        };
+
+        Assert.Equal(expected.OrderBy(r => r.ParentEntityName).ThenBy(r => r.ChildEntityName), model.Relationships);
+    }
+
+    [Theory]
+    [InlineData("api_v1")]
+    [InlineData("a.b")]
+    [InlineData("应用 service")]
+    public void EntityNames_AreStableAndAzureCompatible(string displayName)
+    {
+        var resource = ModelTestHelpers.CreateResource("runtime-suffix", displayName: displayName);
+        var name = AspireHealthModelBuilder.GetEntityName(resource);
+        Assert.Matches("^[a-zA-Z0-9][a-zA-Z0-9-]{1,258}[a-zA-Z0-9]$", name);
+        Assert.Equal(name, AspireHealthModelBuilder.GetEntityName(ModelTestHelpers.CreateResource("another-runtime-suffix", displayName: displayName)));
+    }
+
+    [Fact]
+    public void EntityNames_DoNotCollideWhenDisplayNamesNormalizeToTheSameSlug()
+    {
+        var a = ModelTestHelpers.CreateResource(displayName: "api.v1");
+        var b = ModelTestHelpers.CreateResource(displayName: "api_v1");
+        Assert.NotEqual(AspireHealthModelBuilder.GetEntityName(a), AspireHealthModelBuilder.GetEntityName(b));
     }
 
     [Fact]
