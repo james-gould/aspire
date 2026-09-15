@@ -30,12 +30,4 @@
         IconRest="MetricsIcon()"
         IconActive="MetricsIcon(active: true)"
         Text="@Loc[nameof(Layout.NavMenuMetricsTab)]" />
-    @if (DashboardClient.IsEnabled)
-    {
-        <FluentAppBarItem
-            Href="@DashboardUrls.HealthModelUrl()"
-            IconRest="HealthModelIcon()"
-            IconActive="HealthModelIcon(active: true)"
-            Text="@Loc[nameof(Layout.NavMenuHealthModelTab)]" />
-    }
 </FluentAppBar>

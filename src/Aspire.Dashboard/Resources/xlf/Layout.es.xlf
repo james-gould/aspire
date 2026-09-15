@@ -107,11 +107,6 @@
         <target state="translated">Consola</target>
         <note />
       </trans-unit>
-      <trans-unit id="NavMenuHealthModelTab">
-        <source>Health</source>
-        <target state="new">Health</target>
-        <note />
-      </trans-unit>
       <trans-unit id="NavMenuMetricsTab">
         <source>Metrics</source>
         <target state="translated">Métricas</target>

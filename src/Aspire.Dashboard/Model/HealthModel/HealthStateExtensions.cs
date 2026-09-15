@@ -43,31 +43,4 @@ public static class HealthStateExtensions
 
         return worst;
     }
-
-    /// <summary>
-    /// Applies a child's <see cref="EntityImpact"/> to the state it reports to its parents.
-    /// </summary>
-    /// <remarks>
-    /// This runs on the child before the parent aggregates its dependencies, so impact and the parent's
-    /// aggregation compose rather than override one another.
-    /// </remarks>
-    public static HealthState ApplyImpact(this HealthState state, EntityImpact impact) => impact switch
-    {
-        EntityImpact.Standard => state,
-
-        // A limited-impact child can never report worse than degraded. Its own degraded state is swallowed
-        // entirely so that a partially degraded dependency does not visibly degrade the parent.
-        EntityImpact.Limited => state switch
-        {
-            HealthState.Unhealthy => HealthState.Degraded,
-            HealthState.Degraded => HealthState.Healthy,
-            _ => state
-        },
-
-        // Azure specifies that a suppressed child is always seen as healthy by its parent, including when
-        // its own state is unknown.
-        EntityImpact.Suppressed => HealthState.Healthy,
-
-        _ => state
-    };
 }

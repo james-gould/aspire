@@ -31,10 +31,6 @@ public partial class DesktopNavMenu : ComponentBase, IDisposable
         active ? new Icons.Filled.Size24.ChartMultiple()
                   : new Icons.Regular.Size24.ChartMultiple();
 
-    internal static Icon HealthModelIcon(bool active = false) =>
-        active ? new Icons.Filled.Size24.Heart()
-                  : new Icons.Regular.Size24.Heart();
-
     [Inject]
     public required NavigationManager NavigationManager { get; init; }
 

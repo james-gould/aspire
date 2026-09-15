@@ -447,7 +447,7 @@
    the node surface. The outline has no competing !important rule, so it survives hover and selection and
    the health signal is never lost. */
 ::deep .resource-group[data-health="Healthy"] .resource-node {
-    fill: color-mix(in srgb, var(--aspire-status-success) 30%, var(--fill-color));
+    fill: color-mix(in srgb, var(--aspire-status-success) 30%, var(--aspire-page-background));
 }
 
 ::deep .resource-group[data-health="Healthy"] .resource-node-border {
@@ -456,7 +456,7 @@
 }
 
 ::deep .resource-group[data-health="Degraded"] .resource-node {
-    fill: color-mix(in srgb, var(--aspire-status-warning) 30%, var(--fill-color));
+    fill: color-mix(in srgb, var(--aspire-status-warning) 30%, var(--aspire-page-background));
 }
 
 ::deep .resource-group[data-health="Degraded"] .resource-node-border {
@@ -465,7 +465,7 @@
 }
 
 ::deep .resource-group[data-health="Unhealthy"] .resource-node {
-    fill: color-mix(in srgb, var(--aspire-status-error) 30%, var(--fill-color));
+    fill: color-mix(in srgb, var(--aspire-status-error) 30%, var(--aspire-page-background));
 }
 
 ::deep .resource-group[data-health="Unhealthy"] .resource-node-border {
