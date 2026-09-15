@@ -263,15 +263,7 @@
                             }
                         </div>
                     </div>
-                    <AspireMenu Open="_contextMenuOpen" OpenChanged="ContextMenuOpenChangedAsync" @ref="_contextMenu" Anchor="resources-context-menu-anchor" Anchored="false" Items="_contextMenuItems" />
-                    @* FluentMenu unconditionally stamps aria-expanded on its Anchor element (see
-                       FluentMenu.razor.js). This is a cursor-positioned context menu (ShowContextMenuAsync
-                       opens it at the click coordinates), so the anchor is only an id reference, never a
-                       visible trigger. Point it at a hidden, non-focusable element kept out of the
-                       accessibility tree so the stamped aria-expanded doesn't land on the role-less visible
-                       summary <div> (axe aria-allowed-attr) and AT users don't meet a non-operable control. *@
-                    <button id="@ContextMenuAnchorId" type="button" style="display: none;"></button>
-                    <FluentOverlay Visible="_contextMenuOpen" VisibleChanged="ContextMenuOpenChangedAsync" OnClose="ContextMenuClosedAsync" Transparent="true" FullScreen="true" />
+                    <AspireMenu Open="_contextMenuOpen" OpenChanged="ContextMenuOpenChangedAsync" @ref="_contextMenu" Anchor="@ContextMenuAnchorId" Anchored="false" Items="_contextMenuItems" />
                 </Summary>
                 <Details>
                     <ResourceDetails Resource="context"

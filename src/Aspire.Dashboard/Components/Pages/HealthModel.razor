@@ -19,7 +19,7 @@
                 <div class="health-model-header">
                     <div class="health-model-title">
                         <strong>@_applicationName</strong>
-                        <FluentBadge Appearance="Appearance.Neutral">@Loc[nameof(Strings.HealthModelLocalPreview)]</FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Tint" Color="BadgeColor.Subtle">@Loc[nameof(Strings.HealthModelLocalPreview)]</FluentBadge>
                         <span class="health-model-save-state">@Loc[_dirty ? nameof(Strings.HealthModelUnsaved) : _savedInBrowser ? nameof(Strings.HealthModelSaved) : nameof(Strings.HealthModelDefaultLayout)]</span>
                     </div>
                     <div class="health-model-file-actions">
@@ -35,7 +35,7 @@
                     </div>
                 </div>
                 <div class="health-model-tabs-row">
-                    <FluentTabs ActiveTabId="@_view.ToString()" OnTabChange="ChangeView" Size="null"
+                    <FluentTabs ActiveTabId="@_view.ToString()" ActiveTabChanged="ChangeView" Size="null"
                                 Style="width: 300px; max-width: 100%;">
                         <FluentTab Id="@nameof(HealthModelView.Graph)" Label="@Loc[nameof(Strings.HealthModelGraphTab)]" />
                         <FluentTab Id="@nameof(HealthModelView.Entities)" Label="@Loc[nameof(Strings.HealthModelEntitiesTab)]" />
@@ -45,7 +45,7 @@
                     @if (_view == HealthModelView.Designer)
                     {
                         <div class="health-model-design-actions">
-                            <FluentButton Appearance="Appearance.Accent" OnClick="SaveAsync" Disabled="@(!CanEdit || !_dirty)">
+                            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveAsync" Disabled="@(!CanEdit || !_dirty)">
                                 @Loc[nameof(Strings.HealthModelSave)]
                             </FluentButton>
                             <FluentButton OnClick="Discard" Disabled="@(!CanEdit || !_dirty)">@Loc[nameof(Strings.HealthModelDiscard)]</FluentButton>
@@ -70,9 +70,13 @@
                             </button>
                         }
                     </div>
-                    <FluentSearch @bind-Value="_filter" Immediate="true" ImmediateDelay="@FluentUIExtensions.InputDelay"
+                    <FluentTextInput TextInputType="TextInputType.Search" @bind-Value="_filter" Immediate="true" ImmediateDelay="@FluentUIExtensions.InputDelay"
                                   Label="@ControlsStringsLoc[nameof(ControlsStrings.FilterPlaceholder)]"
-                                  Placeholder="@ControlsStringsLoc[nameof(ControlsStrings.FilterPlaceholder)]" />
+                                  Placeholder="@ControlsStringsLoc[nameof(ControlsStrings.FilterPlaceholder)]">
+                        <StartTemplate>
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Search())" Color="Color.Primary" />
+                        </StartTemplate>
+                    </FluentTextInput>
                 </div>
                 <p class="health-model-hint">@Loc[IsDesigner ? nameof(Strings.HealthModelDesignerHint) : nameof(Strings.HealthModelGraphHint)]</p>
                 @if (_message is not null)
@@ -94,7 +98,7 @@
                                     <div class="health-model-grid-container">
                                         <FluentDataGrid TGridItem="HealthModelNode" Items="@FilteredNodes" ItemKey="@(n => n.Name)"
                                                         GridTemplateColumns="2fr 1fr 1fr 1fr" RowSize="DataGridRowSize.Medium" ShowHover="true"
-                                                        GenerateHeader="GenerateHeaderOption.Sticky" Class="main-grid enable-row-click"
+                                                        GenerateHeader="DataGridGeneratedHeaderType.Sticky" Class="main-grid enable-row-click"
                                                         OnRowClick="@(row => row.ExecuteOnDefault(n => SelectEntity(n.Name)))">
                                             <ChildContent>
                                                 <AspireTemplateColumn Title="@Loc[nameof(Strings.HealthModelEntityColumnHeader)]">

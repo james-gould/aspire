@@ -52,13 +52,13 @@
         </g>
     </svg>
     <div class="health-model-canvas-actions">
-        <FluentButton Appearance="Appearance.Stealth" OnClick="@(() => ZoomAsync(1.25))"
+        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => ZoomAsync(1.25))"
                       Title="@Loc[nameof(Strings.HealthModelZoomIn)]" aria-label="@Loc[nameof(Strings.HealthModelZoomIn)]"
                       IconStart="@(new Icons.Regular.Size20.ZoomIn())" />
-        <FluentButton Appearance="Appearance.Stealth" OnClick="@(() => ZoomAsync(0.8))"
+        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => ZoomAsync(0.8))"
                       Title="@Loc[nameof(Strings.HealthModelZoomOut)]" aria-label="@Loc[nameof(Strings.HealthModelZoomOut)]"
                       IconStart="@(new Icons.Regular.Size20.ZoomOut())" />
-        <FluentButton Appearance="Appearance.Stealth" OnClick="FitAsync"
+        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="FitAsync"
                       Title="@Loc[nameof(Strings.HealthModelFit)]" aria-label="@Loc[nameof(Strings.HealthModelFit)]"
                       IconStart="@(new Icons.Regular.Size20.ArrowExpand())" />
     </div>

@@ -34,6 +34,10 @@ export function updateResourcesGraphSelected(resourceName) {
     }
 }
 
+export function updateResourcesGraphContextMenu(open) {
+    resourceGraph?.contextMenuChanged(open);
+}
+
 export function focusResourceMenuItem(instanceId, itemId, anchorId) {
     return resourceGraph?.instanceId === instanceId
         ? resourceGraph.focusMenuItem(itemId, anchorId)
@@ -1005,20 +1009,19 @@ class ResourceGraph {
         this.contextMenuChanged(true);
 
         try {
-            // Wait for method completion. It completes when the context menu is closed.
-            await this.resourcesInterop.invokeMethodAsync('ResourceContextMenu', id, window.innerWidth, window.innerHeight, clientX, clientY, focusElementId);
+            // Opening completes immediately; subsequent menu events report the open state separately.
+            await this.resourcesInterop.invokeMethodAsync('ResourceContextMenu', id, clientX, clientY, focusElementId);
         } catch (error) {
             this.contextMenuChanged(false);
             throw error;
-        } finally {
-            this.cancelMenuFocus?.();
-            this.openContextMenu = false;
-            trigger?.setAttribute("aria-expanded", "false");
+        }
+    };
 
     contextMenuChanged = (open) => {
         this.openContextMenu = open;
         this.contextMenuTrigger?.setAttribute("aria-expanded", open ? "true" : "false");
         if (!open) {
+            this.cancelMenuFocus?.();
             this.contextMenuTrigger = null;
             this.updateNodeHighlights(null);
         }

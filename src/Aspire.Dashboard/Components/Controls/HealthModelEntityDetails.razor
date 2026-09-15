@@ -8,48 +8,46 @@
     {
         <div class="health-model-entity-editor">
             <h3>@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDesignerTab)]</h3>
-            <FluentTextField Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDisplayName)]"
+            <FluentTextInput Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDisplayName)]"
                              @bind-Value="_displayName" Maxlength="260" />
             <div class="health-model-coordinate-fields">
-                <FluentNumberField TValue="double" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionX)]" @bind-Value="_x" Step="8" />
-                <FluentNumberField TValue="double" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionY)]" @bind-Value="_y" Step="8" />
+                <FluentNumberInput TValue="double" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionX)]" @bind-Value="_x" Step="8" />
+                <FluentNumberInput TValue="double" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPositionY)]" @bind-Value="_y" Step="8" />
             </div>
-            <FluentSelect TOption="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyImpact)]"
-                          @bind-Value="_impact" Disabled="@(Node.Entity.ResourceName is null)">
-                @foreach (var impact in Enum.GetValues<EntityImpact>())
-                {
-                    <FluentOption Value="@impact.ToString()">@HealthModelLabels.Impact(impact, Loc)</FluentOption>
-                }
-            </FluentSelect>
+            <FluentSelect TOption="EntityImpact" TValue="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyImpact)]"
+                          Items="@(Enum.GetValues<EntityImpact>())"
+                          OptionValue="@(impact => impact.ToString())"
+                          OptionText="@(impact => HealthModelLabels.Impact(impact, Loc))"
+                          @bind-Value="_impact" Disabled="@(Node.Entity.ResourceName is null)" />
             <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelImpactHint)]</p>
             @if (Node.Children.Length > 0)
             {
-                <FluentSelect TOption="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyRollup)]" @bind-Value="_aggregation">
-                    @foreach (var aggregation in Enum.GetValues<DependenciesAggregationType>())
-                    {
-                        <FluentOption Value="@aggregation.ToString()">@HealthModelLabels.Aggregation(aggregation, Loc)</FluentOption>
-                    }
-                </FluentSelect>
+                <FluentSelect TOption="DependenciesAggregationType" TValue="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPropertyRollup)]"
+                              Items="@(Enum.GetValues<DependenciesAggregationType>())"
+                              OptionValue="@(aggregation => aggregation.ToString())"
+                              OptionText="@(aggregation => HealthModelLabels.Aggregation(aggregation, Loc))"
+                              @bind-Value="_aggregation" />
                 @if (_aggregation != nameof(DependenciesAggregationType.WorstOf))
                 {
-                    <FluentSelect TOption="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelThresholdUnit)]" @bind-Value="_unit">
-                        <FluentOption Value="@nameof(AggregationUnit.Absolute)">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelAbsolute)]</FluentOption>
-                        <FluentOption Value="@nameof(AggregationUnit.Percentage)">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelPercentage)]</FluentOption>
-                    </FluentSelect>
-                    <FluentNumberField TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDegradedThreshold)]" @bind-Value="_degraded" Min="0" Step="1" />
-                    <FluentNumberField TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelUnhealthyThreshold)]" @bind-Value="_unhealthy" Min="0" Step="1" />
+                    <FluentSelect TOption="AggregationUnit" TValue="string" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelThresholdUnit)]"
+                                  Items="@(Enum.GetValues<AggregationUnit>())"
+                                  OptionValue="@(unit => unit.ToString())"
+                                  OptionText="@(unit => Loc[unit == AggregationUnit.Absolute ? nameof(Dashboard.Resources.HealthModel.HealthModelAbsolute) : nameof(Dashboard.Resources.HealthModel.HealthModelPercentage)])"
+                                  @bind-Value="_unit" />
+                    <FluentNumberInput TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDegradedThreshold)]" @bind-Value="_degraded" Min="0" Step="1" />
+                    <FluentNumberInput TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelUnhealthyThreshold)]" @bind-Value="_unhealthy" Min="0" Step="1" />
                     <FluentCheckbox @bind-Value="_ignoreUnknown" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelIgnoreUnknown)]" />
                     <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelThresholdHint)]</p>
                 }
             }
-            <FluentNumberField TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHealthObjective)]"
+            <FluentNumberInput TValue="double?" Label="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelHealthObjective)]"
                                @bind-Value="_objective" Min="0" Max="100" Step="0.1" />
             <p class="health-model-editor-hint">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelObjectiveHint)]</p>
             @if (_validationError)
             {
                 <p role="alert" class="health-model-settings-error">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelInvalidSettings)]</p>
             }
-            <FluentButton Appearance="Appearance.Accent" OnClick="ApplyAsync">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelApply)]</FluentButton>
+            <FluentButton Appearance="ButtonAppearance.Primary" OnClick="ApplyAsync">@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelApply)]</FluentButton>
         </div>
     }
     <FluentAccordion>
@@ -144,7 +142,7 @@
 
         <FluentAccordionItem Heading="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelSignalsHeader)]" Expanded="true">
             <div slot="end">
-                <FluentBadge Appearance="Appearance.Neutral" Circular="true">@Node.Entity.Signals.Length</FluentBadge>
+                <FluentBadge Appearance="BadgeAppearance.Ghost" Color="BadgeColor.Subtle" Circular="true">@Node.Entity.Signals.Length</FluentBadge>
             </div>
             @if (Node.Entity.Signals.Length == 0)
             {
@@ -156,7 +154,7 @@
                 <FluentDataGrid TGridItem="HealthModelSignal"
                                 Items="@_signals"
                                 ItemKey="@(s => s.Name)"
-                                GenerateHeader="GenerateHeaderOption.Sticky"
+                                GenerateHeader="DataGridGeneratedHeaderType.Sticky"
                                 RowSize="DataGridRowSize.Medium"
                                 GridTemplateColumns="1.5fr 1fr 2fr"
                                 Style="width:100%">
@@ -183,7 +181,7 @@
 
         <FluentAccordionItem Heading="@Loc[nameof(Dashboard.Resources.HealthModel.HealthModelDependenciesHeader)]" Expanded="@(Node.Children.Length > 0)">
             <div slot="end">
-                <FluentBadge Appearance="Appearance.Neutral" Circular="true">@Node.Children.Length</FluentBadge>
+                <FluentBadge Appearance="BadgeAppearance.Ghost" Color="BadgeColor.Subtle" Circular="true">@Node.Children.Length</FluentBadge>
             </div>
             @if (Node.Children.Length == 0)
             {
@@ -194,7 +192,7 @@
                 <FluentDataGrid TGridItem="HealthModelNode"
                                 Items="@_children"
                                 ItemKey="@(n => n.Name)"
-                                GenerateHeader="GenerateHeaderOption.Sticky"
+                                GenerateHeader="DataGridGeneratedHeaderType.Sticky"
                                 RowSize="DataGridRowSize.Medium"
                                 GridTemplateColumns="1.5fr 1fr 1fr"
                                 Style="width:100%">
