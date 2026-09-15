@@ -87,6 +87,7 @@
     <Using Include="Aspire.Dashboard.Components.Resize" />
     <Using Include="Aspire.Dashboard.Model.BrowserStorage" />
     <Using Include="Aspire.Dashboard.ServiceClient" />
+    <Using Include="Aspire.HealthModels" />
   </ItemGroup>
 
   <ItemGroup>
@@ -164,6 +165,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Reconnect.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\HealthModel.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HealthModel.resx</DependentUpon>
     </Compile>
   </ItemGroup>
 
@@ -270,6 +276,13 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Reconnect.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Resources\HealthModel.resx">
+      <XlfSourceFormat>Resx</XlfSourceFormat>
+      <XlfOutputItem>EmbeddedResource</XlfOutputItem>
+      <SubType>Designer</SubType>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>HealthModel.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -281,6 +294,12 @@
     <Compile Include="$(SharedDir)EnumerableExtensions.cs" Link="Utils\EnumerableExtensions.cs" />
     <Compile Include="$(SharedDir)FileLock.cs" Link="Utils\FileLock.cs" />
     <Compile Include="$(SharedDir)FormatHelpers.cs" Link="Utils\FormatHelpers.cs" />
+    <Compile Include="$(SharedDir)HealthModels\DependenciesAggregation.cs" Link="Model\HealthModel\DependenciesAggregation.cs" />
+    <Compile Include="$(SharedDir)HealthModels\EntityImpact.cs" Link="Model\HealthModel\EntityImpact.cs" />
+    <Compile Include="$(SharedDir)HealthModels\HealthModelContract.cs" Link="Model\HealthModel\HealthModelContract.cs" />
+    <Compile Include="$(SharedDir)HealthModels\HealthModelDocument.cs" Link="Model\HealthModel\HealthModelDocument.Shared.cs" />
+    <Compile Include="$(SharedDir)HealthModels\HealthState.cs" Link="Model\HealthModel\HealthState.cs" />
+    <Compile Include="$(SharedDir)HealthModels\SignalKind.cs" Link="Model\HealthModel\SignalKind.cs" />
     <Compile Include="$(SharedDir)DateFormatStringsHelpers.cs" Link="Utils\DateFormatStringsHelpers.cs" />
     <Compile Include="$(SharedDir)TimeProviderExtensions.cs" Link="Extensions\TimeProviderExtensions.cs" />
     <Compile Include="$(SharedDir)LocaleHelpers.cs" Link="Utils\LocaleHelpers.cs" />

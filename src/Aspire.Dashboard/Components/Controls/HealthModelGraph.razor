@@ -1,0 +1,65 @@
+@using Aspire.Dashboard.Model.HealthModel
+@using Strings = Aspire.Dashboard.Resources.HealthModel
+
+<div class="health-model-canvas" data-editable="@Editable.ToString().ToLowerInvariant()">
+    <svg @ref="_svg" class="health-model-graph" role="group" aria-label="@Loc[nameof(Strings.HealthModelCanvasLabel)]">
+        <defs>
+            <pattern id="@_gridId" width="24" height="24" patternUnits="userSpaceOnUse">
+                <circle cx="1" cy="1" r="1" class="health-model-grid-dot" />
+            </pattern>
+            <marker id="@_arrowId" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+            </marker>
+        </defs>
+        <g class="health-model-viewport">
+            <rect x="-1000000" y="-1000000" width="2000000" height="2000000" fill="@($"url(#{_gridId})")" />
+            <g class="health-model-edges">
+                @foreach (var relationship in Snapshot.Definition.Relationships)
+                {
+                    var parent = _nodes[relationship.ParentEntityName];
+                    var child = _nodes[relationship.ChildEntityName];
+                    var state = child.State.ApplyImpact(child.Entity.Impact);
+                    <path @key="relationship" class="health-model-edge" data-parent="@parent.Name" data-child="@child.Name"
+                          data-health="@state" d="@GetPath(relationship)" marker-end="@($"url(#{_arrowId})")">
+                        <title>@Loc[nameof(Strings.HealthModelRelationshipLabel), parent.DisplayName, child.DisplayName, HealthModelLabels.State(state, Loc)]</title>
+                    </path>
+                }
+            </g>
+            <g class="health-model-cards">
+                @foreach (var node in Snapshot.AllNodes)
+                {
+                    var position = _configuration[node.Name].CanvasPosition;
+                    <g @key="node.Name" class="@GetNodeClass(node)" data-entity="@node.Name" data-health="@node.State"
+                       transform="@GetTransform(position)" role="button" tabindex="0"
+                       aria-pressed="@(SelectedEntityName == node.Name)"
+                       aria-label="@Loc[nameof(Strings.HealthModelNodeLabel), node.DisplayName, HealthModelLabels.State(node.State, Loc), node.Entity.Signals.Length]"
+                       @onclick="@(() => OnSelect.InvokeAsync(node.Name))">
+                        <title>@node.DisplayName</title>
+                        <rect class="health-model-card" x="-112" y="-52" width="224" height="104" rx="4" />
+                        <rect class="health-model-selection" x="-116" y="-56" width="232" height="112" rx="6" />
+                        <circle class="health-model-state-dot" cx="-94" cy="-31" r="4" />
+                        <text class="health-model-card-state" x="-82" y="-27">@HealthModelLabels.State(node.State, Loc)</text>
+                        <text class="health-model-card-name" x="-96" y="-1">@Truncate(node.DisplayName)</text>
+                        <text class="health-model-card-type" x="-96" y="19">@Truncate(node.Entity.Category ?? string.Empty)</text>
+                        <text class="health-model-card-signals" x="-96" y="39">@Loc[nameof(Strings.HealthModelSignalsHeader)]: @node.Entity.Signals.Length</text>
+                        @if (Editable)
+                        {
+                            <circle class="health-model-connector" cx="0" cy="52" r="4" />
+                        }
+                    </g>
+                }
+            </g>
+        </g>
+    </svg>
+    <div class="health-model-canvas-actions">
+        <FluentButton Appearance="Appearance.Stealth" OnClick="@(() => ZoomAsync(1.25))"
+                      Title="@Loc[nameof(Strings.HealthModelZoomIn)]" aria-label="@Loc[nameof(Strings.HealthModelZoomIn)]"
+                      IconStart="@(new Icons.Regular.Size20.ZoomIn())" />
+        <FluentButton Appearance="Appearance.Stealth" OnClick="@(() => ZoomAsync(0.8))"
+                      Title="@Loc[nameof(Strings.HealthModelZoomOut)]" aria-label="@Loc[nameof(Strings.HealthModelZoomOut)]"
+                      IconStart="@(new Icons.Regular.Size20.ZoomOut())" />
+        <FluentButton Appearance="Appearance.Stealth" OnClick="FitAsync"
+                      Title="@Loc[nameof(Strings.HealthModelFit)]" aria-label="@Loc[nameof(Strings.HealthModelFit)]"
+                      IconStart="@(new Icons.Regular.Size20.ArrowExpand())" />
+    </div>
+</div>

@@ -159,6 +159,9 @@
   <data name="NavMenuMetricsTab" xml:space="preserve">
     <value>Metrics</value>
   </data>
+  <data name="NavMenuHealthModelTab" xml:space="preserve">
+    <value>Health</value>
+  </data>
   <data name="NavMenuToggleExpand" xml:space="preserve">
     <value>Expand navigation labels</value>
   </data>

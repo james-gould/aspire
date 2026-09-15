@@ -181,6 +181,17 @@ public partial class MobileNavMenu : ComponentBase, IAsyncDisposable
             LinkMatchRegex: GetNonIndexPageRegex(DashboardUrls.MetricsUrl())
         );
 
+        if (DashboardClient.IsEnabled)
+        {
+            yield return new MobileNavMenuEntry(
+                Loc[nameof(Resources.Layout.NavMenuHealthModelTab)],
+                () => NavigateToAsync(DashboardUrls.HealthModelUrl()),
+                DesktopNavMenu.HealthModelIcon(),
+                ActiveIcon: DesktopNavMenu.HealthModelIcon(active: true),
+                LinkMatchRegex: GetNonIndexPageRegex(DashboardUrls.HealthModelUrl())
+            );
+        }
+
         yield return new MobileNavMenuEntry(
             Loc[nameof(Resources.Layout.MainLayoutAspireRepoLink)],
             async () =>

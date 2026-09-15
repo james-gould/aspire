@@ -241,6 +241,15 @@ namespace Aspire.Dashboard.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Health.
+        /// </summary>
+        public static string NavMenuHealthModelTab {
+            get {
+                return ResourceManager.GetString("NavMenuHealthModelTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Metrics.
         /// </summary>
         public static string NavMenuMetricsTab {

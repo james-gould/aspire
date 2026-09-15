@@ -15,6 +15,7 @@ internal static class DashboardUrls
     public const string TracesBasePath = "traces";
     public const string LoginBasePath = "login";
     public const string HealthBasePath = "health";
+    public const string HealthModelBasePath = "healthmodel";
 
     public static string ResourcesUrl(string? resource = null, string? view = null, string? hiddenTypes = null, string? hiddenStates = null, string? hiddenHealthStates = null)
     {
@@ -144,6 +145,21 @@ internal static class DashboardUrls
         if (spanId != null)
         {
             url = AddQueryString(url, "spanId", spanId);
+        }
+
+        return url;
+    }
+
+    public static string HealthModelUrl(string? entity = null, string? view = null)
+    {
+        var url = $"/{HealthModelBasePath}";
+        if (entity != null)
+        {
+            url = AddQueryString(url, "entity", entity);
+        }
+        if (view is not null)
+        {
+            url = AddQueryString(url, "view", view);
         }
 
         return url;

@@ -1,0 +1,457 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="es" original="../HealthModel.resx">
+    <body>
+      <trans-unit id="HealthModelAbsolute">
+        <source>Entity count</source>
+        <target state="new">Entity count</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelAllStates">
+        <source>All health states</source>
+        <target state="new">All health states</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelApply">
+        <source>Apply to draft</source>
+        <target state="new">Apply to draft</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelArrange">
+        <source>Arrange</source>
+        <target state="new">Arrange</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelCanvasLabel">
+        <source>Application health model. Select an entity to inspect it.</source>
+        <target state="new">Application health model. Select an entity to inspect it.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelCloudBoundary">
+        <source>Live health here is local. Azure publishing is an explicit AppHost opt-in; this view does not query Azure. Timelines, alerts and discovery are not included.</source>
+        <target state="new">Live health here is local. Azure publishing is an explicit AppHost opt-in; this view does not query Azure. Timelines, alerts and discovery are not included.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDefaultLayout">
+        <source>Default layout</source>
+        <target state="new">Default layout</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDefinitionHint">
+        <source>The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. Save it in the AppHost project and configure Azure health-model publishing with a matching metrics producer. Azure layout and evaluation parity still require service-level validation.</source>
+        <target state="new">The exported definition preserves entity identities, relationships, canvas coordinates and propagation settings. Save it in the AppHost project and configure Azure health-model publishing with a matching metrics producer. Azure layout and evaluation parity still require service-level validation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDegraded">
+        <source>Degraded</source>
+        <target state="new">Degraded</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDegradedThreshold">
+        <source>Degraded threshold (optional)</source>
+        <target state="new">Degraded threshold (optional)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDependenciesHeader">
+        <source>Dependencies</source>
+        <target state="new">Dependencies</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDescription">
+        <source>Health states roll up from resources to the logical components that depend on them.</source>
+        <target state="new">Health states roll up from resources to the logical components that depend on them.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDesignerHint">
+        <source>Drag entities or use arrow keys to position them. Relationships come from the AppHost. Save changes to keep this layout.</source>
+        <target state="new">Drag entities or use arrow keys to position them. Relationships come from the AppHost. Save changes to keep this layout.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDesignerTab">
+        <source>Designer</source>
+        <target state="new">Designer</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDetailsColumnHeader">
+        <source>Details</source>
+        <target state="new">Details</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDiscard">
+        <source>Discard changes</source>
+        <target state="new">Discard changes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelDisplayName">
+        <source>Display name</source>
+        <target state="new">Display name</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelEntitiesTab">
+        <source>Entities</source>
+        <target state="new">Entities</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelEntityColumnHeader">
+        <source>Entity</source>
+        <target state="new">Entity</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelEntityCount">
+        <source>{0} entities, {1} relationships</source>
+        <target state="new">{0} entities, {1} relationships</target>
+        <note>{0} is an entity count, {1} is a relationship count.</note>
+      </trans-unit>
+      <trans-unit id="HealthModelEntityId">
+        <source>Entity ID</source>
+        <target state="new">Entity ID</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelExport">
+        <source>Export model</source>
+        <target state="new">Export model</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelExportError">
+        <source>The model could not be downloaded. The saved model has not changed.</source>
+        <target state="new">The model could not be downloaded. The saved model has not changed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelFit">
+        <source>Fit to view</source>
+        <target state="new">Fit to view</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelFocusDesigner">
+        <source>Select an entity to edit its propagation settings and canvas position.</source>
+        <target state="new">Select an entity to edit its propagation settings and canvas position.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelGraphHint">
+        <source>Live health from AppHost dependencies. Select an entity to inspect its signals and health propagation.</source>
+        <target state="new">Live health from AppHost dependencies. Select an entity to inspect its signals and health propagation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelGraphTab">
+        <source>Graph</source>
+        <target state="new">Graph</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelHeader">
+        <source>Health model</source>
+        <target state="new">Health model</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelHealthColumnHeader">
+        <source>Health</source>
+        <target state="new">Health</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelHealthObjective">
+        <source>Health objective (%)</source>
+        <target state="new">Health objective (%)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelHealthy">
+        <source>Healthy</source>
+        <target state="new">Healthy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelIgnoreUnknown">
+        <source>Ignore unknown dependencies</source>
+        <target state="new">Ignore unknown dependencies</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImpactHint">
+        <source>Standard propagates health unchanged. Limited converts Unhealthy to Degraded and Degraded to Healthy. Suppressed does not affect parents.</source>
+        <target state="new">Standard propagates health unchanged. Limited converts Unhealthy to Degraded and Degraded to Healthy. Suppressed does not affect parents.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImpactLimited">
+        <source>Limited</source>
+        <target state="new">Limited</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImpactStandard">
+        <source>Standard</source>
+        <target state="new">Standard</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImpactSuppressed">
+        <source>Suppressed</source>
+        <target state="new">Suppressed</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImport">
+        <source>Import model</source>
+        <target state="new">Import model</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImportError">
+        <source>The model could not be imported. Use a version 1 model exported from this application with the same entities and relationships. Details are in the dashboard logs.</source>
+        <target state="new">The model could not be imported. Use a version 1 model exported from this application with the same entities and relationships. Details are in the dashboard logs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelImportSuccess">
+        <source>Model imported into the designer. Save changes to keep it, or discard to return to the previous model.</source>
+        <target state="new">Model imported into the designer. Save changes to keep it, or discard to return to the previous model.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelInvalidSettings">
+        <source>Check the name, coordinates and health settings. Use a 0-100 health objective, valid thresholds, and a more severe unhealthy threshold than the degraded threshold.</source>
+        <target state="new">Check the name, coordinates and health settings. Use a 0-100 health objective, valid thresholds, and a more severe unhealthy threshold than the degraded threshold.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelInvalidTopology">
+        <source>This AppHost cannot be represented as a health-model hierarchy. Check for cyclic or duplicate dependencies. The Resources graph can still show the reference graph.</source>
+        <target state="new">This AppHost cannot be represented as a health-model hierarchy. Check for cyclic or duplicate dependencies. The Resources graph can still show the reference graph.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelLoadError">
+        <source>The saved model is not valid for this application. The live AppHost topology is shown with its default layout.</source>
+        <target state="new">The saved model is not valid for this application. The live AppHost topology is shown with its default layout.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelLocalPreview">
+        <source>Local preview</source>
+        <target state="new">Local preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelMaximumNotHealthy">
+        <source>Maximum not healthy</source>
+        <target state="new">Maximum not healthy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelMinimumHealthy">
+        <source>Minimum healthy</source>
+        <target state="new">Minimum healthy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoDependencies">
+        <source>This entity has no dependencies.</source>
+        <target state="new">This entity has no dependencies.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoEntities">
+        <source>No entities in the health model.</source>
+        <target state="new">No entities in the health model.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoMatch">
+        <source>No entities match the current filter.</source>
+        <target state="new">No entities match the current filter.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNoSignals">
+        <source>This entity has no signals of its own. Its health comes entirely from its dependencies.</source>
+        <target state="new">This entity has no signals of its own. Its health comes entirely from its dependencies.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelNodeLabel">
+        <source>{0}: {1}. {2} signals.</source>
+        <target state="new">{0}: {1}. {2} signals.</target>
+        <note>Entity display name, health state and signal count.</note>
+      </trans-unit>
+      <trans-unit id="HealthModelObjectiveHint">
+        <source>Target percentage of healthy time. Stored for deployment; local availability history is not measured.</source>
+        <target state="new">Target percentage of healthy time. Stored for deployment; local availability history is not measured.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPageTitle">
+        <source>{0} health model</source>
+        <target state="new">{0} health model</target>
+        <note>{0} is an application name</note>
+      </trans-unit>
+      <trans-unit id="HealthModelParents">
+        <source>Parents</source>
+        <target state="new">Parents</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPercentage">
+        <source>Percentage</source>
+        <target state="new">Percentage</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPositionX">
+        <source>Canvas X</source>
+        <target state="new">Canvas X</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPositionY">
+        <source>Canvas Y</source>
+        <target state="new">Canvas Y</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropagation">
+        <source>Health seen by parents</source>
+        <target state="new">Health seen by parents</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyDependenciesState">
+        <source>From dependencies</source>
+        <target state="new">From dependencies</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyImpact">
+        <source>Impact</source>
+        <target state="new">Impact</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyResource">
+        <source>Resource</source>
+        <target state="new">Resource</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertyRollup">
+        <source>Dependency rollup</source>
+        <target state="new">Dependency rollup</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelPropertySignalsState">
+        <source>From signals</source>
+        <target state="new">From signals</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelReadOnly">
+        <source>This is a historical run. Switch to the live run to edit the model.</source>
+        <target state="new">This is a historical run. Switch to the live run to edit the model.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelRelationshipLabel">
+        <source>{0} depends on {1}: {2}</source>
+        <target state="new">{0} depends on {1}: {2}</target>
+        <note>Parent entity name, child entity name and health state.</note>
+      </trans-unit>
+      <trans-unit id="HealthModelRollupColumnHeader">
+        <source>Rollup</source>
+        <target state="new">Rollup</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelRollupMaxNotHealthy">
+        <source>At most {0} not healthy</source>
+        <target state="new">At most {0} not healthy</target>
+        <note>{0} is a count or percentage of child entities that may be unhealthy</note>
+      </trans-unit>
+      <trans-unit id="HealthModelRollupMinHealthy">
+        <source>At least {0} healthy</source>
+        <target state="new">At least {0} healthy</target>
+        <note>{0} is a count or percentage of child entities that must be healthy</note>
+      </trans-unit>
+      <trans-unit id="HealthModelRollupWorstOf">
+        <source>Worst of</source>
+        <target state="new">Worst of</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSave">
+        <source>Save changes</source>
+        <target state="new">Save changes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSaveError">
+        <source>The model could not be saved. Your changes are still available in the designer.</source>
+        <target state="new">The model could not be saved. Your changes are still available in the designer.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSaveSuccess">
+        <source>Model saved. Export it to keep a project-owned copy of the topology, positions and health settings.</source>
+        <target state="new">Model saved. Export it to keep a project-owned copy of the topology, positions and health settings.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSaved">
+        <source>Saved in this browser</source>
+        <target state="new">Saved in this browser</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalColumnHeader">
+        <source>Signal</source>
+        <target state="new">Signal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalCount">
+        <source>{0} of {1} healthy</source>
+        <target state="new">{0} of {1} healthy</target>
+        <note>{0} is the number of healthy signals, {1} is the total number of signals</note>
+      </trans-unit>
+      <trans-unit id="HealthModelSignalsColumnHeader">
+        <source>Signals</source>
+        <target state="new">Signals</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalsHeader">
+        <source>Signals</source>
+        <target state="new">Signals</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSignalsSource">
+        <source>Signals reported by the local AppHost</source>
+        <target state="new">Signals reported by the local AppHost</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelStateColumnHeader">
+        <source>State</source>
+        <target state="new">State</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelSubscriptionError">
+        <source>Resource updates stopped. Reload the page to reconnect; the displayed health may be stale.</source>
+        <target state="new">Resource updates stopped. Reload the page to reconnect; the displayed health may be stale.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelThresholdHint">
+        <source>Minimum healthy breaches at or below the threshold. Maximum not healthy breaches at or above it. Unhealthy takes precedence.</source>
+        <target state="new">Minimum healthy breaches at or below the threshold. Maximum not healthy breaches at or above it. Unhealthy takes precedence.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelThresholdUnit">
+        <source>Threshold unit</source>
+        <target state="new">Threshold unit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelTypeColumnHeader">
+        <source>Type</source>
+        <target state="new">Type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelUndo">
+        <source>Undo</source>
+        <target state="new">Undo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelUnhealthy">
+        <source>Unhealthy</source>
+        <target state="new">Unhealthy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelUnhealthyThreshold">
+        <source>Unhealthy threshold</source>
+        <target state="new">Unhealthy threshold</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelUnknown">
+        <source>Unknown</source>
+        <target state="new">Unknown</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelUnsaved">
+        <source>Unsaved changes</source>
+        <target state="new">Unsaved changes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelViewResource">
+        <source>View resource</source>
+        <target state="new">View resource</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelZoomIn">
+        <source>Zoom in</source>
+        <target state="new">Zoom in</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HealthModelZoomOut">
+        <source>Zoom out</source>
+        <target state="new">Zoom out</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

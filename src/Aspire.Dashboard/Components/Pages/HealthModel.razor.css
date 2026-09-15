@@ -1,0 +1,43 @@
+::deep .health-model-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 500px;
+    overflow: hidden;
+}
+
+.health-model-header, .health-model-tabs-row, .health-model-overview {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.health-model-header, .health-model-tabs-row { justify-content: space-between; }
+.health-model-title, .health-model-file-actions, .health-model-design-actions, .health-model-state-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.health-model-save-state, .health-model-count { color: var(--foreground-subtext-rest); font-size: 12px; }
+.health-model-overview-state { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.health-model-state-filter { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--neutral-foreground-rest); padding: 5px 8px; cursor: pointer; }
+.health-model-state-filter[aria-pressed="true"] { border-color: var(--accent-fill-rest); background: var(--neutral-fill-secondary-rest); }
+.health-model-dot { width: 8px; height: 8px; background: var(--info); border-radius: 50%; }
+[data-health="Healthy"] .health-model-dot { background: var(--aspire-status-success); }
+[data-health="Degraded"] .health-model-dot { background: var(--aspire-status-warning); }
+[data-health="Unhealthy"] .health-model-dot { background: var(--aspire-status-error); }
+.health-model-hint { margin: 0; padding: 8px 16px; color: var(--foreground-subtext-rest); font-size: 12px; }
+.health-model-main { flex: 1; min-height: 0; }
+::deep .health-model-grid-container { height: 100%; overflow: auto; }
+::deep .health-model-entity-link { background: none; border: 0; color: var(--accent-foreground-rest); cursor: pointer; text-align: left; padding: 0; font: inherit; }
+.health-model-message { padding: 8px 16px; background: var(--neutral-fill-secondary-rest); }
+.health-model-message.is-error { border-left: 3px solid var(--aspire-status-error); }
+.health-model-scope { padding: 8px 16px; border-top: 1px solid var(--neutral-stroke-divider-rest); color: var(--foreground-subtext-rest); font-size: 12px; }
+.health-model-scope summary { cursor: pointer; }
+.health-model-import { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+::deep .health-model-import input { max-width: 200px; }
+
+@media (max-width: 600px) {
+    .health-model-layout { min-height: 750px; }
+    .health-model-main { min-height: 380px; }
+    .health-model-file-actions { width: 100%; }
+}
